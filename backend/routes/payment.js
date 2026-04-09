@@ -2,6 +2,7 @@ import express from 'express';
 import midtransClient from 'midtrans-client';
 import dotenv from 'dotenv';
 import { db } from '../config/firebaseClient.js';
+import { doc, setDoc, updateDoc } from 'firebase/firestore';
 
 dotenv.config();
 
@@ -26,8 +27,8 @@ router.post('/charge', async (req, res) => {
                 "order_id": orderId,
                 "gross_amount": amount
             },
-            "credit_card":{
-                "secure" : true
+            "credit_card": {
+                "secure": true
             },
             "customer_details": {
                 "first_name": customer_name,
@@ -36,9 +37,17 @@ router.post('/charge', async (req, res) => {
         };
 
         const transaction = await snap.createTransaction(parameter);
-        
-        // Simpan transaksi status pending ke Firebase di sini jika diperlukan
-        
+
+        // Simpan transaksi status pending ke Firebase menggunakan orderId sebagai Document ID
+        await setDoc(doc(db, 'payments', orderId), {
+            orderId: orderId,
+            customer_name: customer_name,
+            customer_email: customer_email,
+            amount: amount,
+            status: 'pending',
+            createdAt: new Date().toISOString()
+        });
+
         res.status(200).json({ token: transaction.token, redirect_url: transaction.redirect_url });
 
     } catch (error) {
@@ -58,7 +67,27 @@ router.post('/webhook', async (req, res) => {
         console.log(`Transaction notification received. Order ID: ${orderId}. Transaction status: ${transactionStatus}. Fraud status: ${fraudStatus}`);
 
         // Update status pembayaran di database Firebase berdasarkan orderId
-        // Firebase update query...
+        const paymentRef = doc(db, 'payments', orderId);
+
+        let finalStatus = transactionStatus;
+        if (transactionStatus === 'capture') {
+            if (fraudStatus === 'challenge') {
+                finalStatus = 'challenge';
+            } else if (fraudStatus === 'accept') {
+                finalStatus = 'success';
+            }
+        } else if (transactionStatus === 'settlement') {
+            finalStatus = 'success';
+        } else if (transactionStatus === 'cancel' || transactionStatus === 'deny' || transactionStatus === 'expire') {
+            finalStatus = 'failed';
+        } else if (transactionStatus === 'pending') {
+            finalStatus = 'pending';
+        }
+
+        await updateDoc(paymentRef, {
+            status: finalStatus,
+            updatedAt: new Date().toISOString()
+        });
 
         res.status(200).send('OK');
     } catch (error) {

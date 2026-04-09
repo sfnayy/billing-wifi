@@ -28,7 +28,7 @@ export default function Register() {
         <h2 className="text-2xl font-bold text-center text-slate-800 mb-2 flex justify-center items-center gap-2">
           <Wifi className="text-brand-500"/> Daftar Akun Baru
         </h2>
-        <p className="text-center text-slate-500 mb-8">Pilih role Anda untuk keperluan demo</p>
+        <p className="text-center text-slate-500 mb-8">Buat akun untuk mengelola WiFi Anda</p>
         
         <form onSubmit={handleRegister} className="space-y-4">
           <div>
@@ -45,14 +45,6 @@ export default function Register() {
             <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
             <input type="password" onChange={e => setFormData({...formData, password: e.target.value})} required minLength={6}
               className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Role (Khusus Simulasi)</label>
-            <select onChange={e => setFormData({...formData, role: e.target.value})} value={formData.role}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 outline-none bg-white">
-                <option value="user">Pelanggan (User)</option>
-                <option value="admin">Administrator</option>
-            </select>
           </div>
           <button type="submit" disabled={loading}
             className="w-full py-3 mt-4 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow-lg transition-all flex justify-center flex items-center justify-center gap-2">

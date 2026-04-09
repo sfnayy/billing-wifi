@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Activity, CheckCircle, Clock } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import axios from 'axios';
 
 const data = [
   { name: 'Senin', revenue: 400000 },
@@ -13,6 +14,22 @@ const data = [
 ];
 
 export default function Dashboard() {
+  const [activeUsersCount, setActiveUsersCount] = useState(0);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await axios.get('http://localhost:5000/api/users');
+        if (res.data) {
+          setActiveUsersCount(res.data.length);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user stats', error);
+      }
+    };
+    fetchStats();
+  }, []);
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
@@ -21,14 +38,14 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Total Pendapatan" amount="Rp 3.850.000" icon={<Activity className="text-brand-500" />} trend="+12.5%" />
-        <StatCard title="Pelanggan Aktif" amount="124" icon={<Users className="text-blue-500" />} trend="+4" />
-        <StatCard title="Tagihan Lunas" amount="98" icon={<CheckCircle className="text-emerald-500" />} trend="+15" />
-        <StatCard title="Menunggu Pembayaran" amount="26" icon={<Clock className="text-amber-500" />} trend="-3" />
+        <StatCard title="Pelanggan Aktif" amount={activeUsersCount} icon={<Users size={24} />} color="bg-brand-700" />
+        <StatCard title="Tagihan Bulan Ini" amount="Rp 32.500.000" icon={<Activity size={24} />} color="bg-cyan-600" />
+        <StatCard title="Pendapatan Bersih" amount="Rp 28.000.000" icon={<CheckCircle size={24} />} color="bg-emerald-500" />
+        <StatCard title="Pelanggan Menunggak" amount="32" icon={<Clock size={24} />} color="bg-rose-500" />
       </div>
 
-      <div className="glass rounded-3xl p-6 shadow-sm border border-slate-200/60 mt-8">
-        <h3 className="text-lg font-semibold text-slate-800 mb-6">Grafik Pendapatan Mingguan</h3>
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 mt-8">
+        <h3 className="text-lg font-bold text-slate-800 mb-6">Pendapatan Bulanan</h3>
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -54,22 +71,19 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ title, amount, icon, trend }) {
-  const isPositive = trend.startsWith('+');
+function StatCard({ title, amount, icon, color }) {
   return (
-    <div className="glass rounded-3xl p-6 shadow-sm border border-slate-200/60 hover:shadow-md transition-shadow">
-      <div className="flex justify-between items-start mb-4">
-        <div className="p-3 rounded-2xl bg-white shadow-sm border border-slate-100">
+    <div className={`${color} rounded-xl p-5 shadow-sm text-white relative overflow-hidden transition-transform hover:-translate-y-1`}>
+      <div className="flex justify-between items-start relative z-10">
+        <div>
+          <p className="text-white/80 text-xs font-semibold mb-1">{title}</p>
+          <h4 className="text-3xl font-extrabold tracking-tight drop-shadow-sm">{amount}</h4>
+        </div>
+        <div className="bg-white/20 p-2.5 rounded-lg backdrop-blur-sm border border-white/10 shadow-inner">
           {icon}
         </div>
-        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${isPositive ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-          {trend}
-        </span>
       </div>
-      <div>
-        <p className="text-slate-500 text-sm font-medium">{title}</p>
-        <h4 className="text-2xl font-bold text-slate-800 mt-1">{amount}</h4>
-      </div>
+      <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white opacity-10 rounded-full blur-xl"></div>
     </div>
   );
 }

@@ -92,4 +92,61 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// Google Login
+router.post('/google', async (req, res) => {
+    try {
+        const { email, name } = req.body;
+        
+        // Cari user berdasarkan email
+        const usersCol = collection(db, 'users');
+        const q = query(usersCol, where("email", "==", email));
+        const querySnapshot = await getDocs(q);
+
+        let userDoc;
+        let userData;
+
+        if (querySnapshot.empty) {
+            // User doesn't exist, create automatically
+            const randomPassword = Math.random().toString(36).slice(-8);
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(randomPassword, salt);
+            
+            const newUserRef = await addDoc(collection(db, 'users'), {
+                name: name || "Google User",
+                email,
+                password: hashedPassword,
+                role: 'user', // Default to user
+                plan: 'Belum Memilih Paket',
+                createdAt: new Date().toISOString()
+            });
+            
+            userDoc = { id: newUserRef.id };
+            userData = { role: 'user', name: name || 'Google User', email, plan: 'Belum Memilih Paket' };
+        } else {
+            // User exists
+            userDoc = querySnapshot.docs[0];
+            userData = userDoc.data();
+        }
+
+        // Buat JWT Token
+        const payload = {
+            id: userDoc.id,
+            role: userData.role,
+            name: userData.name
+        };
+
+        const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1d' });
+
+        res.status(200).json({ 
+            message: 'Login berhasil', 
+            token, 
+            user: { id: userDoc.id, name: userData.name, email: userData.email, role: userData.role, plan: userData.plan }
+        });
+
+    } catch (error) {
+        console.error('Error saat google login:', error);
+        res.status(500).json({ message: 'Terjadi kesalahan server.' });
+    }
+});
+
 export default router;
