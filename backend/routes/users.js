@@ -24,11 +24,30 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Update data User (Biasa digunakan admin mengubah paket/nama)
+// Get Spesifik User
+router.get('/:id', async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const userRef = doc(db, 'users', userId);
+        const userSnap = await getDoc(userRef);
+        
+        if (!userSnap.exists()) {
+            return res.status(404).json({ message: "User tidak ditemukan" });
+        }
+        
+        const data = userSnap.data();
+        delete data.password;
+        res.status(200).json({ id: userSnap.id, ...data });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Update data User (Profil atau Admin)
 router.put('/:id', async (req, res) => {
     try {
         const userId = req.params.id;
-        const { name, plan, role } = req.body;
+        const { name, plan, role, gender, phone, email, address } = req.body;
         
         const userRef = doc(db, 'users', userId);
         
@@ -38,10 +57,16 @@ router.put('/:id', async (req, res) => {
             return res.status(404).json({ message: "User tidak ditemukan" });
         }
 
+        const currentData = userSnap.data();
+
         await updateDoc(userRef, {
-            name: name || userSnap.data().name,
-            plan: plan || userSnap.data().plan,
-            role: role || userSnap.data().role,
+            name: name !== undefined ? name : currentData.name,
+            plan: plan !== undefined ? plan : currentData.plan,
+            role: role !== undefined ? role : currentData.role,
+            gender: gender !== undefined ? gender : currentData.gender || '',
+            phone: phone !== undefined ? phone : currentData.phone || '',
+            email: email !== undefined ? email : currentData.email,
+            address: address !== undefined ? address : currentData.address || '',
             updatedAt: new Date().toISOString()
         });
 

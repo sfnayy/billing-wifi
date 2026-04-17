@@ -2,7 +2,7 @@ import express from 'express';
 import midtransClient from 'midtrans-client';
 import dotenv from 'dotenv';
 import { db } from '../config/firebaseClient.js';
-import { doc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, getDoc } from 'firebase/firestore';
 
 dotenv.config();
 
@@ -18,9 +18,9 @@ let snap = new midtransClient.Snap({
 // Endpoint untuk Generate Token Transaksi
 router.post('/charge', async (req, res) => {
     try {
-        const { amount, customer_name, customer_email } = req.body;
+        const { amount, customer_name, customer_email, invoice_ids } = req.body;
 
-        const orderId = 'TRX-' + Math.floor(Math.random() * 10000000);
+        const orderId = 'TRX-' + Date.now() + Math.floor(Math.random() * 1000);
 
         let parameter = {
             "transaction_details": {
@@ -38,9 +38,9 @@ router.post('/charge', async (req, res) => {
 
         const transaction = await snap.createTransaction(parameter);
 
-        // Simpan transaksi status pending ke Firebase menggunakan orderId sebagai Document ID
+        // Simpan transaksi status pending ke Firebase menggunakan orderId (atau invoiceID) sebagai Document ID
         await setDoc(doc(db, 'payments', orderId), {
-            orderId: orderId,
+            invoiceIds: invoice_ids || [], // Track which software invoices are covered
             customer_name: customer_name,
             customer_email: customer_email,
             amount: amount,
@@ -88,6 +88,25 @@ router.post('/webhook', async (req, res) => {
             status: finalStatus,
             updatedAt: new Date().toISOString()
         });
+
+        // Update Invoices jika sukses
+        if (finalStatus === 'success') {
+             try {
+                 const snapDoc = await getDoc(paymentRef);
+                 if (snapDoc.exists() && snapDoc.data().invoiceIds) {
+                     const relatedIds = snapDoc.data().invoiceIds;
+                     for (const invId of relatedIds) {
+                         const invRef = doc(db, 'invoices', invId);
+                         await updateDoc(invRef, {
+                             status: 1, // Lunas
+                             lastUpdatedDate: new Date().toISOString()
+                         });
+                     }
+                 }
+             } catch(e) {
+                 console.log("Error updating linked invoices", e);
+             }
+        }
 
         res.status(200).send('OK');
     } catch (error) {

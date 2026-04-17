@@ -1,17 +1,55 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Download, FileText } from 'lucide-react';
 
-const mockTransactions = [
-  { id: 'TRX-001', date: '2023-10-01', name: 'Budi Santoso', amount: 150000, status: 'Lunas' },
-  { id: 'TRX-002', date: '2023-10-02', name: 'Siti Aminah', amount: 200000, status: 'Lunas' },
-  { id: 'TRX-003', date: '2023-10-02', name: 'Andi Wijaya', amount: 150000, status: 'Tertunda' },
-  { id: 'TRX-004', date: '2023-10-03', name: 'Rina Melati', amount: 300000, status: 'Lunas' },
-  { id: 'TRX-005', date: '2023-10-05', name: 'Eko Prasetyo', amount: 150000, status: 'Gagal' },
-];
-
 export default function Reports() {
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchReportsData = async () => {
+      try {
+        const [usersRes, invoicesRes] = await Promise.all([
+          fetch('http://localhost:5000/api/users'),
+          fetch('http://localhost:5000/api/invoices')
+        ]);
+        
+        let users = [];
+        let invoices = [];
+        
+        if (usersRes.ok) users = await usersRes.json();
+        if (invoicesRes.ok) invoices = await invoicesRes.json();
+
+        const userMap = {};
+        users.forEach(u => {
+          userMap[u.id] = u.name || "Unknown User";
+        });
+
+        const mappedTransactions = invoices.map(inv => {
+          let statusText = 'Tertunda';
+          if (inv.status === 1 || inv.status === 'success' || inv.status === 'settlement') statusText = 'Lunas';
+          if (inv.status === -1 || inv.status === 'expire' || inv.status === 'cancel') statusText = 'Gagal';
+          
+          return {
+            id: inv.id.substring(0, 8).toUpperCase(),
+            date: new Date(inv.invoiceDate).toLocaleDateString('id-ID'),
+            name: userMap[inv.customerId] || "Pelanggan",
+            amount: inv.totalAmount || 0,
+            status: statusText
+          };
+        });
+
+        setTransactions(mappedTransactions);
+      } catch (err) {
+        console.error("Failed to fetch reports data", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReportsData();
+  }, []);
 
   const generatePDF = () => {
     const doc = new jsPDF();
@@ -29,7 +67,7 @@ export default function Reports() {
     const tableColumn = ["ID Transaksi", "Tanggal", "Pelanggan", "Jumlah", "Status"];
     const tableRows = [];
 
-    mockTransactions.forEach(trx => {
+    transactions.forEach(trx => {
       const trxData = [
         trx.id,
         trx.date,
@@ -82,7 +120,11 @@ export default function Reports() {
               </tr>
             </thead>
             <tbody>
-              {mockTransactions.map((trx, idx) => (
+              {loading ? (
+                <tr><td colSpan="5" className="py-4 px-6 text-center text-slate-500">Loading data...</td></tr>
+              ) : transactions.length === 0 ? (
+                <tr><td colSpan="5" className="py-4 px-6 text-center text-slate-500">Tidak ada transaksi.</td></tr>
+              ) : transactions.map((trx, idx) => (
                 <tr key={idx} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
                   <td className="py-4 px-6 font-medium text-slate-700 flex items-center gap-2">
                     <FileText size={16} className="text-slate-400" />

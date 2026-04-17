@@ -1,26 +1,66 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
 import { CreditCard, Loader } from 'lucide-react';
 
 export default function UserPayment() {
   const [loading, setLoading] = useState(false);
+  const [invoiceAmount, setInvoiceAmount] = useState(0);
+  const [pendingInvoiceIds, setPendingInvoiceIds] = useState([]);
   const location = useLocation();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   
-  // Ambil amount dari navigasi jika ada, jika tidak default.
-  // Dalam aplikasi nyata, amount ditarik dari database backend berdasarkan `user.plan`
-  const defaultAmount = location.state?.amount || 150000;
-  
+  useEffect(() => {
+     if (location.state && location.state.amount !== undefined) {
+         setInvoiceAmount(location.state.amount);
+         if (location.state.invoiceIds) {
+             setPendingInvoiceIds(location.state.invoiceIds);
+             return;
+         }
+     }
+     
+     // Fetch if no state provided
+     const fetchPendingInvoice = async () => {
+         try {
+             const res = await fetch(`http://localhost:5000/api/invoices/customer/${user.id}`);
+             if (res.ok) {
+                 const data = await res.json();
+                 // get pending invoices
+                 const pending = data.filter(inv => inv.status === 0 || inv.status === 'pending');
+                 if (pending.length > 0) {
+                     setPendingInvoiceIds(pending.map(inv => inv.id));
+                     // sum all, avoiding NaN issues
+                     const total = pending.reduce((sum, inv) => {
+                         const amt = Number(inv.totalAmount);
+                         if (!isNaN(amt)) sum += amt;
+                         return sum;
+                     }, 0);
+                     setInvoiceAmount(total);
+                 }
+             }
+         } catch(e) {
+             console.error(e);
+         }
+     };
+     
+     if (user.id) fetchPendingInvoice();
+  }, [location.state, user.id]);
+
   const handlePayment = async (e) => {
     e.preventDefault();
+    if (invoiceAmount <= 0) {
+        alert("Anda belum memilih paket atau tidak ada tagihan aktif.");
+        return;
+    }
+
     setLoading(true);
 
     try {
       const response = await axios.post('http://localhost:5000/api/payment/charge', {
-        amount: defaultAmount,
+        amount: invoiceAmount,
         customer_name: user.name || "Pelanggan Biasa",
-        customer_email: user.email || "user@example.com"
+        customer_email: user.email || "user@example.com",
+        invoice_ids: pendingInvoiceIds
       });
 
       const { token } = response.data;
@@ -30,10 +70,23 @@ export default function UserPayment() {
       }
 
       window.snap.pay(token, {
-        onSuccess: function(result){ alert("Pembayaran Berhasil! Terima kasih."); console.log(result); },
-        onPending: function(result){ alert("Menunggu pembayaran..."); console.log(result); },
-        onError: function(result){ alert("Pembayaran Gagal!"); console.log(result); },
-        onClose: function(){ alert("Anda membatalkan pembayaran"); }
+        onSuccess: async function(result){ 
+            alert("Pembayaran Berhasil! Terima kasih."); 
+            // Opsional: Lakukan aksi force refresh manual jika webhook tidak ada ngrok lokalnya
+            try {
+                for (const invId of pendingInvoiceIds) {
+                    await axios.put(`http://localhost:5000/api/invoices/${invId}`, { status: 1 });
+                }
+            } catch(e){}
+            window.location.replace('/user'); // Kembali ke dashboard user
+        },
+        onPending: function(result){ alert("Menunggu pembayaran..."); },
+        onError: function(result){ 
+            alert("Pembayaran Gagal!"); 
+        },
+        onClose: function(){ 
+            alert("Anda membatalkan popup pembayaran Midtrans. Tagihan belum dibayar."); 
+        }
       });
     } catch (error) {
       console.error(error);
@@ -52,13 +105,15 @@ export default function UserPayment() {
 
       <div className="glass rounded-3xl p-8 shadow-lg border border-slate-200/60 mt-8">
         <div className="mb-8 flex items-center justify-center p-6 bg-brand-50 rounded-2xl border border-brand-100">
-          <CreditCard className="text-brand-500 w-12 h-12 mr-4" />
-          <div>
-            <h3 className="text-brand-900 font-semibold text-lg">Tagihan Aktif ({user.plan || "Belum Memilih"})</h3>
-            <p className="text-3xl font-black text-brand-600 mt-1">
-              {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(defaultAmount)}
-            </p>
-          </div>
+           <CreditCard className="text-brand-500 w-12 h-12 mr-4" />
+           <div>
+             <h3 className="text-brand-900 font-semibold text-lg">Tagihan Aktif ({invoiceAmount > 0 && user.plan ? user.plan : "Belum Ada Tagihan"})</h3>
+             <p className="text-3xl font-black text-brand-600 mt-1">
+               {invoiceAmount > 0 
+                 ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(invoiceAmount)
+                 : "Rp 0"}
+             </p>
+           </div>
         </div>
 
         <form onSubmit={handlePayment} className="space-y-6">

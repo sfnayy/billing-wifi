@@ -11,8 +11,11 @@ export default function UserManagement() {
   // State untuk modal edit
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [editForm, setEditForm] = useState({ name: '', plan: '', role: '' });
+  const [editForm, setEditForm] = useState({ name: '', plan: '', role: '', packageId: '', durationDays: 30 });
   const [isSaving, setIsSaving] = useState(false);
+  
+  // State Packages
+  const [availablePackages, setAvailablePackages] = useState([]);
 
   const fetchUsers = async () => {
     try {
@@ -26,12 +29,22 @@ export default function UserManagement() {
     }
   };
 
+  const fetchPackages = async () => {
+    try {
+      const res = await axios.get('http://localhost:5000/api/packages');
+      setAvailablePackages(res.data.filter(pkg => !pkg.isDeleted && pkg.status === 1));
+    } catch (error) {
+      console.error("Gagal mengambil paket", error);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
+    fetchPackages();
   }, []);
 
   const handleDelete = async (id) => {
-    if(window.confirm('Yakin ingin menghapus pelanggan ini?')) {
+    if(window.confirm('Yakin ingin menghapus pelanggan ini beserta seluruh datanya?')) {
       try {
         await axios.delete(`http://localhost:5000/api/users/${id}`);
         fetchUsers();
@@ -41,12 +54,36 @@ export default function UserManagement() {
     }
   };
 
+  const handleHapusPaket = async (userToReset) => {
+    if(!window.confirm(`Yakin ingin menonaktifkan dan menghapus paket "${userToReset.plan}" dari pengguna ${userToReset.name}?`)) return;
+    try {
+      // 1. Hapus nama paket dari user
+      await axios.put(`http://localhost:5000/api/users/${userToReset.id}`, { plan: "" });
+      
+      // 2. Ambil langganan aktif lalu matikan statusnya (soft delete)
+      const subRes = await axios.get(`http://localhost:5000/api/subscriptions/customer/${userToReset.id}`);
+      const activeSubs = subRes.data.filter(s => s.status === 1);
+      
+      for (const sub of activeSubs) {
+          await axios.put(`http://localhost:5000/api/subscriptions/${sub.id}`, { status: -1, isDeleted: 1 });
+      }
+      
+      alert('Paket berhasil dihapus dari pelanggan!');
+      fetchUsers();
+    } catch(err) {
+      console.error(err);
+      alert('Terjadi kesalahan saat menghapus paket pengguna.');
+    }
+  };
+
   const openEditModal = (user) => {
     setEditingUser(user);
     setEditForm({
       name: user.name || '',
       plan: user.plan || '',
-      role: user.role || 'user'
+      role: user.role || 'user',
+      packageId: '',
+      durationDays: 30
     });
     setIsEditModalOpen(true);
   };
@@ -60,7 +97,22 @@ export default function UserManagement() {
     e.preventDefault();
     setIsSaving(true);
     try {
-      await axios.put(`http://localhost:5000/api/users/${editingUser.id}`, editForm);
+      // Update data user basic
+      await axios.put(`http://localhost:5000/api/users/${editingUser.id}`, {
+        name: editForm.name,
+        role: editForm.role,
+        plan: editForm.plan
+      });
+
+      // Jika admin memilih paket baru, assign ke langganan
+      if(editForm.packageId) {
+          await axios.post('http://localhost:5000/api/subscriptions', {
+              customerId: editingUser.id,
+              packageId: editForm.packageId,
+              durationDays: editForm.durationDays
+          });
+      }
+
       alert('Data pengguna berhasil diperbarui!');
       closeEditModal();
       fetchUsers();
@@ -143,7 +195,10 @@ export default function UserManagement() {
                 </td>
                 <td className="py-3 px-6 text-center space-x-2 whitespace-nowrap">
                   <button onClick={() => openEditModal(u)} className="px-3 py-1.5 bg-brand-50 text-brand-600 hover:bg-brand-500 hover:text-white rounded text-xs font-semibold transition-colors border border-brand-200">Edit</button>
-                  <button onClick={() => handleDelete(u.id)} className="px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded text-xs font-semibold transition-colors border border-rose-200">Hapus</button>
+                  {u.plan && (
+                      <button onClick={() => handleHapusPaket(u)} className="px-3 py-1.5 bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white rounded text-xs font-semibold transition-colors border border-orange-200">Batalkan Paket</button>
+                  )}
+                  <button onClick={() => handleDelete(u.id)} className="px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded text-xs font-semibold transition-colors border border-rose-200">Hapus Akun</button>
                 </td>
               </tr>
             ))}
@@ -178,15 +233,40 @@ export default function UserManagement() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Paket Layanan WiFi</label>
-                <input 
-                  type="text"
-                  value={editForm.plan}
-                  onChange={(e) => setEditForm({...editForm, plan: e.target.value})}
+                <label className="block text-sm font-medium text-slate-700 mb-1">Ganti Paket Layanan (Opsional)</label>
+                <select
+                  value={editForm.packageId}
+                  onChange={(e) => {
+                    const selPkg = availablePackages.find(p => p.id === e.target.value);
+                    setEditForm({
+                       ...editForm, 
+                       packageId: e.target.value,
+                       plan: selPkg ? selPkg.packageName : editForm.plan
+                    });
+                  }}
                   className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none transition-all"
-                  placeholder="Misal: 20 Mbps"
-                />
+                >
+                  <option value="">-- Pertahankan Paket Saat Ini --</option>
+                  {availablePackages.map(pkg => (
+                      <option key={pkg.id} value={pkg.id}>{pkg.packageName} (Rp {pkg.price.toLocaleString('id-ID')})</option>
+                  ))}
+                </select>
+                <p className="text-xs text-slate-500 mt-1">Paket aktif saat ini: {editingUser?.plan || 'Belum ada'}</p>
               </div>
+
+              {editForm.packageId && (
+                <div className="animate-in fade-in slide-in-from-top-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Durasi Langganan (Hari)</label>
+                  <input 
+                    type="number"
+                    min="1"
+                    value={editForm.durationDays}
+                    onChange={(e) => setEditForm({...editForm, durationDays: e.target.value})}
+                    className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none transition-all"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">Harga akan disesuaikan (prorata) jika durasi bukan 30 hari.</p>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Role Akun</label>
