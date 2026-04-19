@@ -18,10 +18,10 @@ export default function UserDashboard() {
     const fetchData = async () => {
       try {
         const [pkgRes, invRes, subRes, userRes] = await Promise.all([
-            fetch('http://localhost:5000/api/packages').catch(()=>null),
-            fetch(`http://localhost:5000/api/invoices/customer/${user.id}`).catch(()=>null),
-            fetch(`http://localhost:5000/api/subscriptions/customer/${user.id}`).catch(()=>null),
-            fetch(`http://localhost:5000/api/users/${user.id}`).catch(()=>null)
+            fetch(import.meta.env.VITE_API_URL + '/packages').catch(()=>null),
+            fetch(`\${import.meta.env.VITE_API_URL}/invoices/customer/${user.id}`).catch(()=>null),
+            fetch(`\${import.meta.env.VITE_API_URL}/subscriptions/customer/${user.id}`).catch(()=>null),
+            fetch(`\${import.meta.env.VITE_API_URL}/users/${user.id}`).catch(()=>null)
         ]);
         
         if (pkgRes && pkgRes.ok) {
@@ -86,7 +86,7 @@ export default function UserDashboard() {
     setLoading(true);
     try {
       // Request subscription ke backend (Otomatis membuat subscription & invoice baru)
-      const subResponse = await axios.post(`http://localhost:5000/api/subscriptions`, {
+      const subResponse = await axios.post(`\${import.meta.env.VITE_API_URL}/subscriptions`, {
           customerId: user.id,
           packageId: plan.id,
           companyCode: "NET",

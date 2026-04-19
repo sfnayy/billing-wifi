@@ -47,7 +47,7 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', { email, password });
+      const response = await axios.post(import.meta.env.VITE_API_URL + '/auth/login', { email, password });
       const { otpRequired, sessionId: sid } = response.data;
 
       if (otpRequired) {
@@ -74,7 +74,7 @@ export default function Login() {
     setOtpError('');
     setOtpLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/verify-otp', { sessionId, otp });
+      const response = await axios.post(import.meta.env.VITE_API_URL + '/auth/verify-otp', { sessionId, otp });
       const { token, user } = response.data;
       login(token, user);
       navigate(user.role === 'admin' ? '/admin' : '/user');
@@ -89,7 +89,7 @@ export default function Login() {
   const handleResendOtp = async () => {
     setOtpError('');
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', { email, password });
+      const response = await axios.post(import.meta.env.VITE_API_URL + '/auth/login', { email, password });
       if (response.data.sessionId) {
         setSessionId(response.data.sessionId);
         startCountdown(300);
@@ -106,7 +106,7 @@ export default function Login() {
       const result = await signInWithPopup(auth, googleProvider);
       const googleUser = result.user;
 
-      const response = await axios.post('http://localhost:5000/api/auth/google', {
+      const response = await axios.post(import.meta.env.VITE_API_URL + '/auth/google', {
         email: googleUser.email,
         name: googleUser.displayName
       });

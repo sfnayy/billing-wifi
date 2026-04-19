@@ -24,7 +24,7 @@ const PackageManagement = () => {
   const fetchPackages = async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:5000/api/packages');
+      const res = await fetch(import.meta.env.VITE_API_URL + '/packages');
       if (!res.ok) throw new Error('Gagal memuat data paket');
       const data = await res.json();
       setPackages(data);
@@ -44,8 +44,8 @@ const PackageManagement = () => {
     setIsSaving(true);
     try {
       const url = isEditing 
-        ? `http://localhost:5000/api/packages/${editId}` 
-        : 'http://localhost:5000/api/packages';
+        ? `\${import.meta.env.VITE_API_URL}/packages/${editId}` 
+        : import.meta.env.VITE_API_URL + '/packages';
       
       const method = isEditing ? 'PUT' : 'POST';
 
@@ -70,7 +70,7 @@ const PackageManagement = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Yakin ingin menghapus paket ini?')) {
       try {
-        const res = await fetch(`http://localhost:5000/api/packages/${id}`, { method: 'DELETE' });
+        const res = await fetch(`\${import.meta.env.VITE_API_URL}/packages/${id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('Gagal menghapus paket');
         fetchPackages();
       } catch (err) {

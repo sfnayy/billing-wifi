@@ -20,7 +20,7 @@ export default function UserProfile({ onClose, asPage = false }) {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/users/${userLocal.id}`);
+        const res = await axios.get(`\${import.meta.env.VITE_API_URL}/users/${userLocal.id}`);
         const data = res.data;
         setFormData({
           name: data.name || '',
@@ -53,7 +53,7 @@ export default function UserProfile({ onClose, asPage = false }) {
     setSuccessMsg("");
 
     try {
-      await axios.put(`http://localhost:5000/api/users/${userLocal.id}`, formData);
+      await axios.put(`\${import.meta.env.VITE_API_URL}/users/${userLocal.id}`, formData);
       setSuccessMsg("Profil berhasil diperbarui!");
       
       // Update local storage for immediate UI reflection in header if needed

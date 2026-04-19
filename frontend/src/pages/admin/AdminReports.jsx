@@ -46,8 +46,8 @@ export default function AdminReports() {
     setLoading(true);
     try {
       const [usersRes, invoicesRes] = await Promise.all([
-        fetch('http://localhost:5000/api/users'),
-        fetch('http://localhost:5000/api/invoices'),
+        fetch(import.meta.env.VITE_API_URL + '/users'),
+        fetch(import.meta.env.VITE_API_URL + '/invoices'),
       ]);
 
       let users = [];
@@ -126,7 +126,7 @@ export default function AdminReports() {
     setEditLoading(true);
     setEditSuccess('');
     try {
-      const res = await fetch(`http://localhost:5000/api/invoices/${editModal.id}`, {
+      const res = await fetch(`\${import.meta.env.VITE_API_URL}/invoices/${editModal.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -164,7 +164,7 @@ export default function AdminReports() {
   const handleDelete = async () => {
     setDeleteLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/invoices/${deleteModal.id}`, {
+      const res = await fetch(`\${import.meta.env.VITE_API_URL}/invoices/${deleteModal.id}`, {
         method: 'DELETE',
       });
       if (!res.ok) throw new Error('Gagal hapus');

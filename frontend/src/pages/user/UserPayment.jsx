@@ -22,7 +22,7 @@ export default function UserPayment() {
      // Fetch if no state provided
      const fetchPendingInvoice = async () => {
          try {
-             const res = await fetch(`http://localhost:5000/api/invoices/customer/${user.id}`);
+             const res = await fetch(`\${import.meta.env.VITE_API_URL}/invoices/customer/${user.id}`);
              if (res.ok) {
                  const data = await res.json();
                  // get pending invoices
@@ -56,7 +56,7 @@ export default function UserPayment() {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/payment/charge', {
+      const response = await axios.post(import.meta.env.VITE_API_URL + '/payment/charge', {
         amount: invoiceAmount,
         customer_name: user.name || "Pelanggan Biasa",
         customer_email: user.email || "user@example.com",
@@ -75,7 +75,7 @@ export default function UserPayment() {
             // Opsional: Lakukan aksi force refresh manual jika webhook tidak ada ngrok lokalnya
             try {
                 for (const invId of pendingInvoiceIds) {
-                    await axios.put(`http://localhost:5000/api/invoices/${invId}`, { status: 1 });
+                    await axios.put(`\${import.meta.env.VITE_API_URL}/invoices/${invId}`, { status: 1 });
                 }
             } catch(e){}
             window.location.replace('/user'); // Kembali ke dashboard user

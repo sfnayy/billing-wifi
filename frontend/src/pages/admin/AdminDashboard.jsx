@@ -21,9 +21,9 @@ export default function AdminDashboard() {
     const fetchDashboardData = async () => {
       try {
         const [usersRes, invoicesRes, packagesRes] = await Promise.all([
-          fetch('http://localhost:5000/api/users').catch(() => null),
-          fetch('http://localhost:5000/api/invoices').catch(() => null),
-          fetch('http://localhost:5000/api/packages').catch(() => null),
+          fetch(import.meta.env.VITE_API_URL + '/users').catch(() => null),
+          fetch(import.meta.env.VITE_API_URL + '/invoices').catch(() => null),
+          fetch(import.meta.env.VITE_API_URL + '/packages').catch(() => null),
         ]);
 
         let users = [];

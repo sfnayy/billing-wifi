@@ -11,8 +11,8 @@ export default function Reports() {
     const fetchReportsData = async () => {
       try {
         const [usersRes, invoicesRes] = await Promise.all([
-          fetch('http://localhost:5000/api/users'),
-          fetch('http://localhost:5000/api/invoices')
+          fetch(import.meta.env.VITE_API_URL + '/users'),
+          fetch(import.meta.env.VITE_API_URL + '/invoices')
         ]);
         
         let users = [];

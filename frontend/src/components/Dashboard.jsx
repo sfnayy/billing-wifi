@@ -19,7 +19,7 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/users');
+        const res = await axios.get(import.meta.env.VITE_API_URL + '/users');
         if (res.data) {
           setActiveUsersCount(res.data.length);
         }

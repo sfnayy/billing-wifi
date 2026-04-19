@@ -20,7 +20,7 @@ export default function UserLayout() {
     const fetchPendingCount = async () => {
       if (!user?.id) return;
       try {
-        const res = await fetch(`http://localhost:5000/api/invoices/customer/${user.id}`);
+        const res = await fetch(`\${import.meta.env.VITE_API_URL}/invoices/customer/${user.id}`);
         if (res.ok) {
           const data = await res.json();
           const pending = data.filter(inv => inv.status === 0 || inv.status === 'pending');

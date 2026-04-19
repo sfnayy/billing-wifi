@@ -9,7 +9,7 @@ export default function Home() {
   useEffect(() => {
     const fetchPackages = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/packages');
+        const res = await fetch(import.meta.env.VITE_API_URL + '/packages');
         if (res.ok) {
           const data = await res.json();
           setPackages(data.filter(p => !p.isDeleted && p.status === 1));
