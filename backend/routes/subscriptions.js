@@ -1,7 +1,7 @@
 import express from 'express';
 import { collection, getDocs, addDoc, doc, updateDoc, getDoc, query, where } from 'firebase/firestore';
 import { db } from '../config/firebaseClient.js';
-import { requireAdmin } from '../middleware/auth.js';
+import { requireAdmin, requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -32,7 +32,7 @@ router.get('/customer/:customerId', async (req, res) => {
 });
 
 // POST buat langganan baru (dan otomatis buat tagihan) — User login
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
     try {
         const { customerId, packageId, companyCode, durationDays } = req.body;
 

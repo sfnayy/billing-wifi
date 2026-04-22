@@ -17,11 +17,14 @@ export default function UserDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const token = localStorage.getItem('token');
+        const authOpts = { headers: { 'Authorization': `Bearer ${token}` } };
+
         const [pkgRes, invRes, subRes, userRes] = await Promise.all([
             fetch(import.meta.env.VITE_API_URL + '/packages').catch(()=>null),
-            fetch(`\${import.meta.env.VITE_API_URL}/invoices/customer/${user.id}`).catch(()=>null),
-            fetch(`\${import.meta.env.VITE_API_URL}/subscriptions/customer/${user.id}`).catch(()=>null),
-            fetch(`\${import.meta.env.VITE_API_URL}/users/${user.id}`).catch(()=>null)
+            fetch(`${import.meta.env.VITE_API_URL}/invoices/customer/${user.id}`, authOpts).catch(()=>null),
+            fetch(`${import.meta.env.VITE_API_URL}/subscriptions/customer/${user.id}`, authOpts).catch(()=>null),
+            fetch(`${import.meta.env.VITE_API_URL}/users/${user.id}`, authOpts).catch(()=>null)
         ]);
         
         if (pkgRes && pkgRes.ok) {
@@ -85,12 +88,15 @@ export default function UserDashboard() {
     if(!window.confirm(`Pesan paket ${plan.packageName}? Tagihan akan otomatis dibuat.`)) return;
     setLoading(true);
     try {
+      const token = localStorage.getItem('token');
       // Request subscription ke backend (Otomatis membuat subscription & invoice baru)
-      const subResponse = await axios.post(`\${import.meta.env.VITE_API_URL}/subscriptions`, {
+      const subResponse = await axios.post(`${import.meta.env.VITE_API_URL}/subscriptions`, {
           customerId: user.id,
           packageId: plan.id,
           companyCode: "NET",
           durationDays: 30
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
 
       // Ambil invoiceId dari response backend agar bisa dikirim ke Midtrans
@@ -104,7 +110,9 @@ export default function UserDashboard() {
       // Kirim amount dan invoiceId agar UserPayment tahu invoice mana yang harus dilunasi
       navigate('/user/payment', { state: { amount: amount || plan.price, invoiceIds: invoiceId ? [invoiceId] : [] } }); 
     } catch (error) {
-      alert("Gagal memilih paket. Coba lagi nanti.");
+      console.error('Error pilih paket:', error.response?.data || error.message);
+      const errMsg = error.response?.data?.message || 'Coba lagi nanti.';
+      alert(`Gagal memilih paket: ${errMsg}`);
     } finally {
       setLoading(false);
     }

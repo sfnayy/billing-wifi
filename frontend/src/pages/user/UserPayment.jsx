@@ -22,7 +22,10 @@ export default function UserPayment() {
      // Fetch if no state provided
      const fetchPendingInvoice = async () => {
          try {
-             const res = await fetch(`\${import.meta.env.VITE_API_URL}/invoices/customer/${user.id}`);
+             const token = localStorage.getItem('token');
+             const res = await fetch(`${import.meta.env.VITE_API_URL}/invoices/customer/${user.id}`, {
+               headers: { 'Authorization': `Bearer ${token}` }
+             });
              if (res.ok) {
                  const data = await res.json();
                  // get pending invoices
@@ -74,8 +77,11 @@ export default function UserPayment() {
             alert("Pembayaran Berhasil! Terima kasih."); 
             // Opsional: Lakukan aksi force refresh manual jika webhook tidak ada ngrok lokalnya
             try {
+                const token = localStorage.getItem('token');
                 for (const invId of pendingInvoiceIds) {
-                    await axios.put(`\${import.meta.env.VITE_API_URL}/invoices/${invId}`, { status: 1 });
+                    await axios.put(`${import.meta.env.VITE_API_URL}/invoices/${invId}`, { status: 1 }, {
+                      headers: { Authorization: `Bearer ${token}` }
+                    });
                 }
             } catch(e){}
             window.location.replace('/user'); // Kembali ke dashboard user
