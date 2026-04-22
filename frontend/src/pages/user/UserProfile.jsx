@@ -20,7 +20,10 @@ export default function UserProfile({ onClose, asPage = false }) {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const res = await axios.get(`\${import.meta.env.VITE_API_URL}/users/${userLocal.id}`);
+        const token = localStorage.getItem('token');
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/users/${userLocal.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         const data = res.data;
         setFormData({
           name: data.name || '',
@@ -53,7 +56,10 @@ export default function UserProfile({ onClose, asPage = false }) {
     setSuccessMsg("");
 
     try {
-      await axios.put(`\${import.meta.env.VITE_API_URL}/users/${userLocal.id}`, formData);
+      const token = localStorage.getItem('token');
+      await axios.put(`${import.meta.env.VITE_API_URL}/users/${userLocal.id}`, formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setSuccessMsg("Profil berhasil diperbarui!");
       
       // Update local storage for immediate UI reflection in header if needed

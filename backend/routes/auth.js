@@ -81,25 +81,21 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Email atau Password salah!' });
     }
 
-    // Buat OTP & session
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const sessionId = uuidv4();
-
-    otpStore.set(sessionId, {
-      otp,
-      email: userData.email,
-      userId: userDoc.id,
-      userData,
-      expiresAt: Date.now() + 5 * 60 * 1000, // 5 menit
-    });
-
-    // Kirim OTP ke email (atau log ke console jika dev mode)
-    await sendOtpEmail(userData.email, otp);
+    // Buat JWT Token langsung (bypass OTP)
+    const payload = { id: userDoc.id, role: userData.role, name: userData.name };
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1d' });
 
     res.status(200).json({
-      message: 'OTP telah dikirim ke email Anda.',
-      otpRequired: true,
-      sessionId,
+      message: 'Login berhasil',
+      otpRequired: false,
+      token,
+      user: {
+        id: userDoc.id,
+        name: userData.name,
+        email: userData.email,
+        role: userData.role,
+        plan: userData.plan,
+      },
     });
   } catch (error) {
     console.error('Error saat login:', error);
@@ -155,7 +151,7 @@ router.post('/verify-otp', async (req, res) => {
   }
 });
 
-// Google Login (bypass 2FA)
+// Google Login (Wajib 2FA)
 router.post('/google', async (req, res) => {
   try {
     const { email, name } = req.body;
@@ -190,23 +186,70 @@ router.post('/google', async (req, res) => {
       userData = userDoc.data();
     }
 
-    // Buat JWT Token
-    const payload = { id: userDoc.id, role: userData.role, name: userData.name };
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1d' });
+    // Buat OTP & session
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const sessionId = uuidv4();
+
+    otpStore.set(sessionId, {
+      otp,
+      email: userData.email,
+      userId: userDoc.id,
+      userData,
+      expiresAt: Date.now() + 5 * 60 * 1000, // 5 menit
+    });
+
+    // Kirim OTP ke email
+    await sendOtpEmail(userData.email, otp);
 
     res.status(200).json({
-      message: 'Login berhasil',
-      token,
-      user: {
-        id: userDoc.id,
-        name: userData.name,
-        email: userData.email,
-        role: userData.role,
-        plan: userData.plan,
-      },
+      message: 'OTP telah dikirim ke email Google Anda.',
+      otpRequired: true,
+      sessionId,
     });
   } catch (error) {
     console.error('Error saat google login:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan server.' });
+  }
+});
+
+// Resend OTP
+router.post('/resend-otp', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Cari user
+    const usersCol = collection(db, 'users');
+    const q = query(usersCol, where('email', '==', email));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      return res.status(404).json({ message: 'User tidak ditemukan.' });
+    }
+
+    const userDoc = querySnapshot.docs[0];
+    const userData = userDoc.data();
+
+    // Buat OTP & session
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const sessionId = uuidv4();
+
+    otpStore.set(sessionId, {
+      otp,
+      email: userData.email,
+      userId: userDoc.id,
+      userData,
+      expiresAt: Date.now() + 5 * 60 * 1000, // 5 menit
+    });
+
+    // Kirim OTP ke email
+    await sendOtpEmail(userData.email, otp);
+
+    res.status(200).json({
+      message: 'OTP telah dikirim ulang ke email Anda.',
+      sessionId,
+    });
+  } catch (error) {
+    console.error('Error saat resend OTP:', error);
     res.status(500).json({ message: 'Terjadi kesalahan server.' });
   }
 });

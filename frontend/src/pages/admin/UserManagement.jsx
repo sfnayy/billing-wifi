@@ -19,7 +19,10 @@ export default function UserManagement() {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get(import.meta.env.VITE_API_URL + '/users');
+      const token = localStorage.getItem('token');
+      const res = await axios.get(import.meta.env.VITE_API_URL + '/users', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setUsers(res.data);
     } catch (error) {
       console.error(error);
@@ -46,7 +49,10 @@ export default function UserManagement() {
   const handleDelete = async (id) => {
     if(window.confirm('Yakin ingin menghapus pelanggan ini beserta seluruh datanya?')) {
       try {
-        await axios.delete(`\${import.meta.env.VITE_API_URL}/users/${id}`);
+        const token = localStorage.getItem('token');
+        await axios.delete(`${import.meta.env.VITE_API_URL}/users/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         fetchUsers();
       } catch (error) {
         alert('Gagal menghapus');
@@ -57,15 +63,18 @@ export default function UserManagement() {
   const handleHapusPaket = async (userToReset) => {
     if(!window.confirm(`Yakin ingin menonaktifkan dan menghapus paket "${userToReset.plan}" dari pengguna ${userToReset.name}?`)) return;
     try {
+      const token = localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      
       // 1. Hapus nama paket dari user
-      await axios.put(`\${import.meta.env.VITE_API_URL}/users/${userToReset.id}`, { plan: "" });
+      await axios.put(`${import.meta.env.VITE_API_URL}/users/${userToReset.id}`, { plan: "" }, config);
       
       // 2. Ambil langganan aktif lalu matikan statusnya (soft delete)
-      const subRes = await axios.get(`\${import.meta.env.VITE_API_URL}/subscriptions/customer/${userToReset.id}`);
+      const subRes = await axios.get(`${import.meta.env.VITE_API_URL}/subscriptions/customer/${userToReset.id}`, config);
       const activeSubs = subRes.data.filter(s => s.status === 1);
       
       for (const sub of activeSubs) {
-          await axios.put(`\${import.meta.env.VITE_API_URL}/subscriptions/${sub.id}`, { status: -1, isDeleted: 1 });
+          await axios.put(`${import.meta.env.VITE_API_URL}/subscriptions/${sub.id}`, { status: -1, isDeleted: 1 }, config);
       }
       
       alert('Paket berhasil dihapus dari pelanggan!');
@@ -97,12 +106,15 @@ export default function UserManagement() {
     e.preventDefault();
     setIsSaving(true);
     try {
+      const token = localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+
       // Update data user basic
-      await axios.put(`\${import.meta.env.VITE_API_URL}/users/${editingUser.id}`, {
+      await axios.put(`${import.meta.env.VITE_API_URL}/users/${editingUser.id}`, {
         name: editForm.name,
         role: editForm.role,
         plan: editForm.plan
-      });
+      }, config);
 
       // Jika admin memilih paket baru, assign ke langganan
       if(editForm.packageId) {
@@ -110,7 +122,7 @@ export default function UserManagement() {
               customerId: editingUser.id,
               packageId: editForm.packageId,
               durationDays: editForm.durationDays
-          });
+          }, config);
       }
 
       alert('Data pengguna berhasil diperbarui!');

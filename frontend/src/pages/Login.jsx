@@ -89,7 +89,7 @@ export default function Login() {
   const handleResendOtp = async () => {
     setOtpError('');
     try {
-      const response = await axios.post(import.meta.env.VITE_API_URL + '/auth/login', { email, password });
+      const response = await axios.post(import.meta.env.VITE_API_URL + '/auth/resend-otp', { email });
       if (response.data.sessionId) {
         setSessionId(response.data.sessionId);
         startCountdown(300);
@@ -99,21 +99,29 @@ export default function Login() {
     }
   };
 
-  // Google Login (bypass 2FA karena Google sudah terverifikasi)
+  // Google Login (Wajib 2FA)
   const handleGoogleLogin = async () => {
     setError('');
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const googleUser = result.user;
+      setEmail(googleUser.email); // Set email agar bisa digunakan untuk resend OTP
 
       const response = await axios.post(import.meta.env.VITE_API_URL + '/auth/google', {
         email: googleUser.email,
         name: googleUser.displayName
       });
 
-      const { token, user } = response.data;
-      login(token, user);
-      navigate(user.role === 'admin' ? '/admin' : '/user');
+      const { otpRequired, sessionId: sid, token, user } = response.data;
+      
+      if (otpRequired) {
+        setSessionId(sid);
+        setOtpStep(true);
+        startCountdown(300);
+      } else {
+        login(token, user);
+        navigate(user.role === 'admin' ? '/admin' : '/user');
+      }
     } catch (error) {
       console.error(error);
       setError('Login dengan Google Gagal!');

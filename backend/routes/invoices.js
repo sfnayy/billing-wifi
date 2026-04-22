@@ -1,6 +1,7 @@
 import express from 'express';
 import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, getDoc, query, where } from 'firebase/firestore';
 import { db } from '../config/firebaseClient.js';
+import { requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -51,7 +52,7 @@ router.get('/customer/:customerId', async (req, res) => {
 });
 
 // POST buat tagihan baru
-router.post('/', async (req, res) => {
+router.post('/', requireAdmin, async (req, res) => {
     try {
         const { subscriptionId, customerId, totalAmount, companyCode, dueDate } = req.body;
 
@@ -78,7 +79,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT update tagihan (status, nominal, due date, dll)
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireAdmin, async (req, res) => {
     try {
         const invId = req.params.id;
         const invRef = doc(db, 'invoices', invId);
@@ -105,7 +106,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE tagihan (soft delete)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
     try {
         const invId = req.params.id;
         const invRef = doc(db, 'invoices', invId);

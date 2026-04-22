@@ -24,7 +24,10 @@ const PackageManagement = () => {
   const fetchPackages = async () => {
     try {
       setLoading(true);
-      const res = await fetch(import.meta.env.VITE_API_URL + '/packages');
+      const token = localStorage.getItem('token');
+      const res = await fetch(import.meta.env.VITE_API_URL + '/packages', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       if (!res.ok) throw new Error('Gagal memuat data paket');
       const data = await res.json();
       setPackages(data);
@@ -48,10 +51,14 @@ const PackageManagement = () => {
         : import.meta.env.VITE_API_URL + '/packages';
       
       const method = isEditing ? 'PUT' : 'POST';
+      const token = localStorage.getItem('token');
 
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(formData)
       });
 
@@ -70,7 +77,11 @@ const PackageManagement = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Yakin ingin menghapus paket ini?')) {
       try {
-        const res = await fetch(`\${import.meta.env.VITE_API_URL}/packages/${id}`, { method: 'DELETE' });
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/packages/${id}`, { 
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         if (!res.ok) throw new Error('Gagal menghapus paket');
         fetchPackages();
       } catch (err) {

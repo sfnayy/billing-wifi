@@ -1,6 +1,7 @@
 import express from 'express';
 import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebaseClient.js';
+import { requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -18,7 +19,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST package baru (Untuk Admin)
-router.post('/', async (req, res) => {
+router.post('/', requireAdmin, async (req, res) => {
     try {
         const { packageName, speed, price, description, companyCode, status } = req.body;
         
@@ -40,7 +41,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT update package
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireAdmin, async (req, res) => {
     try {
         const packageId = req.params.id;
         const updates = req.body;
@@ -64,7 +65,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE package (soft delete)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
     try {
         const packageId = req.params.id;
         const packageRef = doc(db, 'packages', packageId);

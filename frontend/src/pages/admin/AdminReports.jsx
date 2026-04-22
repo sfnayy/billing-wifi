@@ -45,9 +45,12 @@ export default function AdminReports() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      const token = localStorage.getItem('token');
+      const headers = { 'Authorization': `Bearer ${token}` };
+
       const [usersRes, invoicesRes] = await Promise.all([
-        fetch(import.meta.env.VITE_API_URL + '/users'),
-        fetch(import.meta.env.VITE_API_URL + '/invoices'),
+        fetch(import.meta.env.VITE_API_URL + '/users', { headers }),
+        fetch(import.meta.env.VITE_API_URL + '/invoices', { headers }),
       ]);
 
       let users = [];
@@ -126,9 +129,13 @@ export default function AdminReports() {
     setEditLoading(true);
     setEditSuccess('');
     try {
-      const res = await fetch(`\${import.meta.env.VITE_API_URL}/invoices/${editModal.id}`, {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/invoices/${editModal.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           totalAmount: Number(editForm.totalAmount),
           status: Number(editForm.status),
@@ -164,8 +171,10 @@ export default function AdminReports() {
   const handleDelete = async () => {
     setDeleteLoading(true);
     try {
-      const res = await fetch(`\${import.meta.env.VITE_API_URL}/invoices/${deleteModal.id}`, {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/invoices/${deleteModal.id}`, {
         method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Gagal hapus');
       setInvoices(prev => prev.filter(inv => inv.id !== deleteModal.id));

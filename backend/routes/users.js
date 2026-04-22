@@ -2,6 +2,7 @@ import express from 'express';
 import { collection, getDocs, doc, updateDoc, deleteDoc, getDoc, query, where } from 'firebase/firestore';
 import { db } from '../config/firebaseClient.js';
 import bcrypt from 'bcryptjs';
+import { requireAdmin, requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -44,9 +45,14 @@ router.get('/:id', async (req, res) => {
 });
 
 // Update data User (Profil atau Admin)
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireAuth, async (req, res) => {
     try {
         const userId = req.params.id;
+        
+        // Authorization check: User can only update their own profile, unless they are admin
+        if (req.user.id !== userId && req.user.role !== 'admin') {
+            return res.status(403).json({ message: "Akses ditolak." });
+        }
         const { name, plan, role, gender, phone, email, address } = req.body;
         
         const userRef = doc(db, 'users', userId);
@@ -79,7 +85,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Hapus User (Oleh Admin)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
     try {
         const userId = req.params.id;
         const userRef = doc(db, 'users', userId);
