@@ -47,7 +47,7 @@ const PackageManagement = () => {
     setIsSaving(true);
     try {
       const url = isEditing 
-        ? `\${import.meta.env.VITE_API_URL}/packages/${editId}` 
+        ? `${import.meta.env.VITE_API_URL}/packages/${editId}` 
         : import.meta.env.VITE_API_URL + '/packages';
       
       const method = isEditing ? 'PUT' : 'POST';
