@@ -1,5 +1,5 @@
 import express from 'express';
-import { collection, getDocs, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc, getDoc, query, where } from 'firebase/firestore';
 import { db } from '../config/firebaseClient.js';
 import bcrypt from 'bcryptjs';
 
@@ -57,21 +57,23 @@ router.put('/:id', async (req, res) => {
             return res.status(404).json({ message: "User tidak ditemukan" });
         }
 
-        const currentData = userSnap.data();
+        // Buat objek update hanya dengan field yang dikirim (tidak undefined)
+        const updates = {};
+        if (name !== undefined) updates.name = name;
+        if (plan !== undefined) updates.plan = plan;
+        if (role !== undefined) updates.role = role;
+        if (gender !== undefined) updates.gender = gender;
+        if (phone !== undefined) updates.phone = phone;
+        if (email !== undefined) updates.email = email;
+        if (address !== undefined) updates.address = address;
+        
+        updates.updatedAt = new Date().toISOString();
 
-        await updateDoc(userRef, {
-            name: name !== undefined ? name : currentData.name,
-            plan: plan !== undefined ? plan : currentData.plan,
-            role: role !== undefined ? role : currentData.role,
-            gender: gender !== undefined ? gender : currentData.gender || '',
-            phone: phone !== undefined ? phone : currentData.phone || '',
-            email: email !== undefined ? email : currentData.email,
-            address: address !== undefined ? address : currentData.address || '',
-            updatedAt: new Date().toISOString()
-        });
+        await updateDoc(userRef, updates);
 
         res.status(200).json({ id: userId, message: "Berhasil diupdate" });
     } catch (error) {
+        console.error("Error update user:", error);
         res.status(500).json({ message: error.message });
     }
 });
@@ -82,9 +84,35 @@ router.delete('/:id', async (req, res) => {
         const userId = req.params.id;
         const userRef = doc(db, 'users', userId);
         
+        // Hapus Data User
         await deleteDoc(userRef);
-        res.status(200).json({ message: "User sukses dihapus" });
+
+        // Soft delete semua subscriptions milik user
+        const subCol = collection(db, 'subscriptions');
+        const qSub = query(subCol, where('customerId', '==', userId));
+        const subSnap = await getDocs(qSub);
+        for (const subDoc of subSnap.docs) {
+            await updateDoc(subDoc.ref, { 
+                status: -1, 
+                isDeleted: 1, 
+                deletedAt: new Date().toISOString() 
+            });
+        }
+
+        // Soft delete semua invoices milik user
+        const invCol = collection(db, 'invoices');
+        const qInv = query(invCol, where('customerId', '==', userId));
+        const invSnap = await getDocs(qInv);
+        for (const invDoc of invSnap.docs) {
+            await updateDoc(invDoc.ref, { 
+                isDeleted: 1, 
+                deletedAt: new Date().toISOString() 
+            });
+        }
+
+        res.status(200).json({ message: "User sukses dihapus beserta seluruh datanya" });
     } catch (error) {
+        console.error("Error delete user:", error);
         res.status(500).json({ message: error.message });
     }
 });
