@@ -66,7 +66,13 @@ export default function UserPayment() {
         invoice_ids: pendingInvoiceIds
       });
 
-      const { token } = response.data;
+      const { token, order_id } = response.data;
+      if (order_id) {
+        try {
+          sessionStorage.setItem('midtrans_last_order_id', order_id);
+          sessionStorage.setItem('midtrans_api_base', import.meta.env.VITE_API_URL || '');
+        } catch (e) {}
+      }
       if (!window.snap) {
          alert("Midtrans Snap belum dimuat! Pastikan Client Key benar di index.html");
          return;

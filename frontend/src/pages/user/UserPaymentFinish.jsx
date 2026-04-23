@@ -14,7 +14,16 @@ export default function UserPaymentFinish() {
   const [state, setState] = useState({ loading: true, status: 'pending', message: 'Memverifikasi pembayaran...' });
 
   useEffect(() => {
-    const orderId = query.get('order_id') || query.get('orderId');
+    const orderId =
+      query.get('order_id') ||
+      query.get('orderId') ||
+      (() => {
+        try {
+          return sessionStorage.getItem('midtrans_last_order_id');
+        } catch (e) {
+          return null;
+        }
+      })();
     if (!orderId) {
       setState({ loading: false, status: 'failed', message: 'Order ID tidak ditemukan dari redirect Midtrans.' });
       return;
@@ -87,6 +96,9 @@ export default function UserPaymentFinish() {
         </div>
         <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Status Pembayaran</h2>
         <p className="text-slate-600 mt-2">{state.message}</p>
+        <p className="text-xs text-slate-400 mt-4">
+          API: {(() => { try { return sessionStorage.getItem('midtrans_api_base') || import.meta.env.VITE_API_URL || '-'; } catch(e) { return import.meta.env.VITE_API_URL || '-'; } })()}
+        </p>
 
         {!state.loading && (
           <div className="mt-6 flex justify-center gap-3">

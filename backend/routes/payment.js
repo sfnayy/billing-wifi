@@ -82,7 +82,11 @@ router.post('/charge', async (req, res) => {
             createdAt: new Date().toISOString()
         });
 
-        res.status(200).json({ token: transaction.token, redirect_url: transaction.redirect_url });
+        res.status(200).json({
+            order_id: orderId,
+            token: transaction.token,
+            redirect_url: transaction.redirect_url
+        });
 
     } catch (error) {
         console.error('Error in /charge:', error);
