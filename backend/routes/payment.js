@@ -33,6 +33,9 @@ router.post('/charge', async (req, res) => {
             "customer_details": {
                 "first_name": customer_name,
                 "email": customer_email,
+            },
+            "callbacks": {
+                "finish": `${process.env.FRONTEND_URL || 'http://localhost:5173'}/user`
             }
         };
 
@@ -91,21 +94,21 @@ router.post('/webhook', async (req, res) => {
 
         // Update Invoices jika sukses
         if (finalStatus === 'success') {
-             try {
-                 const snapDoc = await getDoc(paymentRef);
-                 if (snapDoc.exists() && snapDoc.data().invoiceIds) {
-                     const relatedIds = snapDoc.data().invoiceIds;
-                     for (const invId of relatedIds) {
-                         const invRef = doc(db, 'invoices', invId);
-                         await updateDoc(invRef, {
-                             status: 1, // Lunas
-                             lastUpdatedDate: new Date().toISOString()
-                         });
-                     }
-                 }
-             } catch(e) {
-                 console.log("Error updating linked invoices", e);
-             }
+            try {
+                const snapDoc = await getDoc(paymentRef);
+                if (snapDoc.exists() && snapDoc.data().invoiceIds) {
+                    const relatedIds = snapDoc.data().invoiceIds;
+                    for (const invId of relatedIds) {
+                        const invRef = doc(db, 'invoices', invId);
+                        await updateDoc(invRef, {
+                            status: 1, // Lunas
+                            lastUpdatedDate: new Date().toISOString()
+                        });
+                    }
+                }
+            } catch (e) {
+                console.log("Error updating linked invoices", e);
+            }
         }
 
         res.status(200).send('OK');
