@@ -31,6 +31,20 @@ let snap = new midtransClient.Snap({
     clientKey: process.env.MIDTRANS_CLIENT_KEY || 'YOUR_MIDTRANS_CLIENT_KEY'
 });
 
+// Debug endpoint (safe) to verify env/config on Vercel
+router.get('/config', (req, res) => {
+    const serverKey = process.env.MIDTRANS_SERVER_KEY || '';
+    const clientKey = process.env.MIDTRANS_CLIENT_KEY || '';
+    res.json({
+        environment: snap.apiConfig.isProduction ? 'production' : 'sandbox',
+        serverKey_set: Boolean(serverKey),
+        serverKey_prefix: serverKey ? serverKey.slice(0, 12) : null,
+        clientKey_set: Boolean(clientKey),
+        clientKey_prefix: clientKey ? clientKey.slice(0, 12) : null,
+        frontend_url: process.env.FRONTEND_URL || null
+    });
+});
+
 // Endpoint untuk Generate Token Transaksi
 router.post('/charge', async (req, res) => {
     try {
