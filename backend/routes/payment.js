@@ -132,8 +132,23 @@ router.get('/status/:orderId', async (req, res) => {
             mapped_status: finalStatus
         });
     } catch (error) {
+        // Midtrans may return 404 if transaction doesn't exist yet / wrong order id
+        const message = error?.message || 'Unknown error';
+        const apiResp = error?.ApiResponse;
+        const midtransStatusCode =
+            (typeof apiResp === 'string' && (() => { try { return JSON.parse(apiResp)?.status_code; } catch { return undefined; } })()) ||
+            apiResp?.status_code;
+
+        if (message.includes("Transaction doesn't exist") || midtransStatusCode === '404' || midtransStatusCode === 404) {
+            return res.status(404).json({
+                order_id: req.params.orderId,
+                mapped_status: 'not_found',
+                message: "Transaksi belum ditemukan di Midtrans (order_id tidak valid atau belum terbuat)."
+            });
+        }
+
         console.error('Error in /status/:orderId:', error);
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message });
     }
 });
 

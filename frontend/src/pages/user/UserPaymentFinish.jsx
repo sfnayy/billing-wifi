@@ -40,7 +40,23 @@ export default function UserPaymentFinish() {
         setState({ loading: false, status: 'pending', message: 'Pembayaran masih pending. Silakan cek kembali beberapa saat lagi.' });
       } catch (e) {
         if (cancelled) return;
-        setState({ loading: false, status: 'pending', message: 'Gagal verifikasi ke server. Coba refresh halaman ini.' });
+        const httpStatus = e?.response?.status;
+        const serverMsg = e?.response?.data?.message;
+
+        if (httpStatus === 404) {
+          setState({
+            loading: false,
+            status: 'failed',
+            message: serverMsg || 'Transaksi tidak ditemukan. Pastikan pembayaran dibuat dari halaman ini lalu coba lagi.'
+          });
+          return;
+        }
+
+        setState({
+          loading: false,
+          status: 'pending',
+          message: serverMsg || 'Gagal verifikasi ke server. Coba refresh halaman ini.'
+        });
       }
     })();
 
