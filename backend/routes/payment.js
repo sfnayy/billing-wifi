@@ -8,6 +8,22 @@ dotenv.config();
 
 const router = express.Router();
 
+function normalizeBaseUrl(url) {
+    if (!url || typeof url !== 'string') return '';
+    return url.replace(/\/+$/, '');
+}
+
+function getFrontendBaseUrl(req) {
+    const fromEnv = normalizeBaseUrl(process.env.FRONTEND_URL);
+    if (fromEnv) return fromEnv;
+
+    const origin = normalizeBaseUrl(req.get('origin'));
+    if (origin) return origin;
+
+    // As a last resort for local dev.
+    return 'http://localhost:5173';
+}
+
 // Initialize Midtrans CoreApi / Snap
 let snap = new midtransClient.Snap({
     isProduction: false,
@@ -21,6 +37,7 @@ router.post('/charge', async (req, res) => {
         const { amount, customer_name, customer_email, invoice_ids } = req.body;
 
         const orderId = 'TRX-' + Date.now() + Math.floor(Math.random() * 1000);
+        const frontendBaseUrl = getFrontendBaseUrl(req);
 
         let parameter = {
             "transaction_details": {
@@ -35,7 +52,7 @@ router.post('/charge', async (req, res) => {
                 "email": customer_email,
             },
             "callbacks": {
-                "finish": `${process.env.FRONTEND_URL || 'http://localhost:5173'}/user`
+                "finish": `${frontendBaseUrl}/user/payment/finish?order_id=${encodeURIComponent(orderId)}`
             }
         };
 
@@ -55,6 +72,67 @@ router.post('/charge', async (req, res) => {
 
     } catch (error) {
         console.error('Error in /charge:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Endpoint untuk mengecek status transaksi (berguna jika webhook tidak sampai)
+router.get('/status/:orderId', async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        if (!orderId) return res.status(400).json({ message: 'orderId is required' });
+
+        const statusResponse = await snap.transaction.status(orderId);
+        const transactionStatus = statusResponse.transaction_status;
+        const fraudStatus = statusResponse.fraud_status;
+
+        const paymentRef = doc(db, 'payments', orderId);
+
+        let finalStatus = transactionStatus;
+        if (transactionStatus === 'capture') {
+            if (fraudStatus === 'challenge') finalStatus = 'challenge';
+            else if (fraudStatus === 'accept') finalStatus = 'success';
+        } else if (transactionStatus === 'settlement') {
+            finalStatus = 'success';
+        } else if (transactionStatus === 'cancel' || transactionStatus === 'deny' || transactionStatus === 'expire') {
+            finalStatus = 'failed';
+        } else if (transactionStatus === 'pending') {
+            finalStatus = 'pending';
+        }
+
+        // Update firestore if record exists; if not, still return status.
+        try {
+            await updateDoc(paymentRef, { status: finalStatus, updatedAt: new Date().toISOString() });
+        } catch (e) {
+            // ignore (e.g. missing doc)
+        }
+
+        // Update linked invoices on success (best-effort)
+        if (finalStatus === 'success') {
+            try {
+                const snapDoc = await getDoc(paymentRef);
+                if (snapDoc.exists() && snapDoc.data().invoiceIds) {
+                    const relatedIds = snapDoc.data().invoiceIds;
+                    for (const invId of relatedIds) {
+                        const invRef = doc(db, 'invoices', invId);
+                        await updateDoc(invRef, {
+                            status: 1,
+                            lastUpdatedDate: new Date().toISOString()
+                        });
+                    }
+                }
+            } catch (e) {
+                console.log("Error updating linked invoices", e);
+            }
+        }
+
+        res.status(200).json({
+            order_id: orderId,
+            transaction_status: transactionStatus,
+            mapped_status: finalStatus
+        });
+    } catch (error) {
+        console.error('Error in /status/:orderId:', error);
         res.status(500).json({ message: error.message });
     }
 });

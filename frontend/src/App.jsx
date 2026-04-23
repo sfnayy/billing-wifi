@@ -18,6 +18,7 @@ import AdminReports from './pages/admin/AdminReports';
 import UserLayout from './layouts/UserLayout';
 import UserDashboard from './pages/user/UserDashboard';
 import UserPayment from './pages/user/UserPayment';
+import UserPaymentFinish from './pages/user/UserPaymentFinish';
 import UserProfile from './pages/user/UserProfile';
 
 // =================================================================
@@ -92,6 +93,7 @@ function App() {
         }>
           <Route index element={<UserDashboard />} />
           <Route path="payment" element={<UserPayment />} />
+          <Route path="payment/finish" element={<UserPaymentFinish />} />
           <Route path="profile" element={<UserProfilePage />} />
         </Route>
 
