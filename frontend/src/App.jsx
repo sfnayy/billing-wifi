@@ -13,6 +13,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import UserManagement from './pages/admin/UserManagement';
 import PackageManagement from './pages/admin/PackageManagement';
 import AdminReports from './pages/admin/AdminReports';
+import SubscriptionManagement from './pages/admin/SubscriptionManagement';
 
 // User Pages
 import UserLayout from './layouts/UserLayout';
@@ -82,6 +83,7 @@ function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<UserManagement />} />
           <Route path="packages" element={<PackageManagement />} />
+          <Route path="subscriptions" element={<SubscriptionManagement />} />
           <Route path="reports" element={<AdminReports />} />
         </Route>
 

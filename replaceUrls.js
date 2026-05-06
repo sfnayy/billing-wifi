@@ -5,11 +5,11 @@ function replaceInFile(filePath) {
   let content = fs.readFileSync(filePath, 'utf-8');
   let original = content;
 
-  // Replace 'http://localhost:5000/api/...' or "http://localhost:5000/api/..."
-  content = content.replace(/['"]http:\/\/localhost:5000\/api(.*?)['"]/g, "import.meta.env.VITE_API_URL + '$1'");
+  // Replace 'http://localhost:<port>/api/...' or "http://localhost:<port>/api/..."
+  content = content.replace(/['"]http:\/\/localhost:\d+\/api(.*?)['"]/g, "import.meta.env.VITE_API_URL + '$1'");
 
-  // Replace `http://localhost:5000/api/...`
-  content = content.replace(/`http:\/\/localhost:5000\/api(.*?)`/g, "`\\${import.meta.env.VITE_API_URL}$1`");
+  // Replace `http://localhost:<port>/api/...`
+  content = content.replace(/`http:\/\/localhost:\d+\/api(.*?)`/g, "`\\${import.meta.env.VITE_API_URL}$1`");
 
   if (content !== original) {
     fs.writeFileSync(filePath, content, 'utf-8');
@@ -35,7 +35,7 @@ traverseDir(targetDir);
 
 // Create or update .env in frontend directory
 const envPath = path.join(__dirname, 'frontend', '.env');
-const envContent = `VITE_API_URL=http://localhost:5000/api
+const envContent = `VITE_API_URL=/api
 `;
 fs.writeFileSync(envPath, envContent, 'utf-8');
 console.log('Created frontend/.env');

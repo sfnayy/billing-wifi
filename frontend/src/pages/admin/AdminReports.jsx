@@ -24,6 +24,7 @@ function getStatusInfo(status) {
 export default function AdminReports() {
   const [invoices, setInvoices] = useState([]);
   const [userMap, setUserMap] = useState({});
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Filter & Sort
@@ -37,6 +38,19 @@ export default function AdminReports() {
   const [editForm, setEditForm] = useState({});
   const [editLoading, setEditLoading] = useState(false);
   const [editSuccess, setEditSuccess] = useState('');
+
+  // Modal Create
+  const [createModal, setCreateModal] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    customerId: '',
+    subscriptionId: '',
+    companyCode: '',
+    invoiceDate: new Date().toISOString().slice(0, 10),
+    dueDate: '',
+    totalAmount: '',
+    notes: '',
+  });
+  const [createLoading, setCreateLoading] = useState(false);
 
   // Modal Hapus
   const [deleteModal, setDeleteModal] = useState(null); // invoice object
@@ -62,6 +76,7 @@ export default function AdminReports() {
       const map = {};
       users.forEach(u => { map[u.id] = u.name || 'Pelanggan'; });
       setUserMap(map);
+      setUsers(users);
       setInvoices(rawInvoices);
     } catch (err) {
       console.error('Gagal memuat data laporan:', err);
@@ -122,6 +137,55 @@ export default function AdminReports() {
       invoiceDate: inv.invoiceDate ? inv.invoiceDate.slice(0, 10) : '',
       notes: inv.notes || '',
     });
+  };
+
+  const openCreate = () => {
+    setCreateForm({
+      customerId: '',
+      subscriptionId: '',
+      companyCode: '',
+      invoiceDate: new Date().toISOString().slice(0, 10),
+      dueDate: '',
+      totalAmount: '',
+      notes: '',
+    });
+    setCreateModal(true);
+  };
+
+  const handleCreateSubmit = async (e) => {
+    e.preventDefault();
+    setCreateLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/invoices`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          customerId: createForm.customerId,
+          subscriptionId: createForm.subscriptionId || '',
+          companyCode: createForm.companyCode || '',
+          totalAmount: Number(createForm.totalAmount),
+          dueDate: createForm.dueDate ? new Date(createForm.dueDate).toISOString() : undefined,
+          notes: createForm.notes || '',
+          invoiceDate: createForm.invoiceDate ? new Date(createForm.invoiceDate).toISOString() : undefined,
+        }),
+      });
+
+      if (!res.ok) {
+        const msg = await res.json().catch(() => ({}));
+        throw new Error(msg?.message || 'Gagal membuat tagihan');
+      }
+
+      setCreateModal(false);
+      await fetchData();
+    } catch (err) {
+      alert(err?.message || 'Gagal membuat tagihan.');
+    } finally {
+      setCreateLoading(false);
+    }
   };
 
   const handleEditSubmit = async (e) => {
@@ -231,12 +295,20 @@ export default function AdminReports() {
           <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Manajemen Keuangan</h2>
           <p className="text-slate-500 mt-1">Kelola, edit, hapus, dan ekspor data tagihan pelanggan.</p>
         </div>
-        <button
-          onClick={generatePDF}
-          className="flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl shadow-md transition-colors text-sm font-semibold"
-        >
-          <Download size={16} /> Export PDF
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={openCreate}
+            className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl shadow-md transition-colors text-sm font-semibold"
+          >
+            <FileText size={16} /> Tambah Tagihan
+          </button>
+          <button
+            onClick={generatePDF}
+            className="flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl shadow-md transition-colors text-sm font-semibold"
+          >
+            <Download size={16} /> Export PDF
+          </button>
+        </div>
       </div>
 
       {/* Ringkasan Cards */}
@@ -478,6 +550,125 @@ export default function AdminReports() {
                 >
                   {editLoading ? <Loader size={16} className="animate-spin" /> : <Save size={16} />}
                   {editLoading ? 'Menyimpan...' : 'Simpan Perubahan'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Modal Create ───────────────────────────────── */}
+      {createModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">Tambah Tagihan</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Buat invoice manual untuk pelanggan.</p>
+              </div>
+              <button onClick={() => setCreateModal(false)} className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateSubmit} className="p-6 space-y-5">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5">Pelanggan</label>
+                <select
+                  value={createForm.customerId}
+                  onChange={e => setCreateForm({ ...createForm, customerId: e.target.value })}
+                  required
+                  className="w-full px-3 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400 bg-white transition-all"
+                >
+                  <option value="">-- Pilih Pelanggan --</option>
+                  {users.filter(u => u.role === 'user').map(u => (
+                    <option key={u.id} value={u.id}>{u.name} — {u.email}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">Tanggal Invoice</label>
+                  <input
+                    type="date"
+                    value={createForm.invoiceDate}
+                    onChange={e => setCreateForm({ ...createForm, invoiceDate: e.target.value })}
+                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">Jatuh Tempo</label>
+                  <input
+                    type="date"
+                    value={createForm.dueDate}
+                    onChange={e => setCreateForm({ ...createForm, dueDate: e.target.value })}
+                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400 transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">Nominal (Rp)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={createForm.totalAmount}
+                    onChange={e => setCreateForm({ ...createForm, totalAmount: e.target.value })}
+                    required
+                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">Kode Perusahaan (opsional)</label>
+                  <input
+                    type="text"
+                    value={createForm.companyCode}
+                    onChange={e => setCreateForm({ ...createForm, companyCode: e.target.value })}
+                    placeholder="Misal: NETBILL-01"
+                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400 transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5">Subscription ID (opsional)</label>
+                <input
+                  type="text"
+                  value={createForm.subscriptionId}
+                  onChange={e => setCreateForm({ ...createForm, subscriptionId: e.target.value })}
+                  placeholder="Isi jika invoice terkait langganan tertentu"
+                  className="w-full px-3 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400 transition-all font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5">Catatan (opsional)</label>
+                <textarea
+                  rows={2}
+                  value={createForm.notes}
+                  onChange={e => setCreateForm({ ...createForm, notes: e.target.value })}
+                  placeholder="Catatan tambahan..."
+                  className="w-full px-3 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400 transition-all resize-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setCreateModal(false)}
+                  className="px-5 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={createLoading}
+                  className="flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-white bg-brand-600 hover:bg-brand-700 rounded-xl transition-colors shadow-sm disabled:opacity-60"
+                >
+                  {createLoading ? <Loader size={16} className="animate-spin" /> : <Save size={16} />}
+                  {createLoading ? 'Menyimpan...' : 'Buat Tagihan'}
                 </button>
               </div>
             </form>
