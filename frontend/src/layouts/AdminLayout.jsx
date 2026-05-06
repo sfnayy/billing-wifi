@@ -33,6 +33,7 @@ export default function AdminLayout() {
       items: [
         { path: '/admin/users', icon: <Users size={20} />, label: 'Data Pelanggan' },
         { path: '/admin/packages', icon: <Package size={20} />, label: 'Data Paket' },
+        { path: '/admin/subscriptions', icon: <Settings size={20} />, label: 'Transaksi Langganan' },
       ]
     },
     {
