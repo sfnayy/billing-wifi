@@ -2,6 +2,7 @@ import express from 'express';
 import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, getDoc, query, where } from 'firebase/firestore';
 import { db } from '../config/firebaseClient.js';
 import { requireAdmin } from '../middleware/auth.js';
+import { generateTransactionCode } from '../utils/transactionCode.js';
 
 const router = express.Router();
 
@@ -61,6 +62,7 @@ router.post('/', requireAdmin, async (req, res) => {
         if (!dueDate) due.setDate(due.getDate() + 7); // Default jatuh tempo 7 hari
 
         const newInvRef = await addDoc(collection(db, 'invoices'), {
+            transactionCode: generateTransactionCode('TRX'),
             subscriptionId: subscriptionId || '',
             customerId: customerId || '',
             invoiceDate: invoiceDate.toISOString(),

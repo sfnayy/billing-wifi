@@ -30,9 +30,12 @@ export default function Reports() {
           let statusText = 'Tertunda';
           if (inv.status === 1 || inv.status === 'success' || inv.status === 'settlement') statusText = 'Lunas';
           if (inv.status === -1 || inv.status === 'expire' || inv.status === 'cancel') statusText = 'Gagal';
+
+          const legacyId = (inv.id || '').substring(0, 8).toUpperCase();
+          const trxCode = inv.transactionCode || (legacyId ? `TRX-${legacyId}` : 'TRX-UNKNOWN');
           
           return {
-            id: inv.id.substring(0, 8).toUpperCase(),
+            id: trxCode,
             date: new Date(inv.invoiceDate).toLocaleDateString('id-ID'),
             name: userMap[inv.customerId] || "Pelanggan",
             amount: inv.totalAmount || 0,

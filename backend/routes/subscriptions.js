@@ -2,6 +2,7 @@ import express from 'express';
 import { collection, getDocs, addDoc, doc, updateDoc, getDoc, query, where } from 'firebase/firestore';
 import { db } from '../config/firebaseClient.js';
 import { requireAdmin, requireAuth } from '../middleware/auth.js';
+import { generateTransactionCode } from '../utils/transactionCode.js';
 
 const router = express.Router();
 
@@ -77,6 +78,7 @@ router.post('/', requireAuth, async (req, res) => {
         const dueDate = new Date();
         dueDate.setDate(dueDate.getDate() + 7);
         const newInvoiceRef = await addDoc(collection(db, 'invoices'), {
+            transactionCode: generateTransactionCode('TRX'),
             subscriptionId: newSubRef.id,
             customerId,
             invoiceDate: invoiceDate.toISOString(),
