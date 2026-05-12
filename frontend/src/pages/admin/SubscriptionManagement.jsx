@@ -240,12 +240,12 @@ export default function SubscriptionManagement() {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
+              <th className="py-4 px-6 font-semibold text-slate-600 text-sm text-center">Aksi</th>
               <th className="py-4 px-6 font-semibold text-slate-600 text-sm">Pelanggan</th>
               <th className="py-4 px-6 font-semibold text-slate-600 text-sm">Paket</th>
               <th className="py-4 px-6 font-semibold text-slate-600 text-sm">Periode</th>
               <th className="py-4 px-6 font-semibold text-slate-600 text-sm">Kode</th>
               <th className="py-4 px-6 font-semibold text-slate-600 text-sm">Status</th>
-              <th className="py-4 px-6 font-semibold text-slate-600 text-sm text-center">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -255,6 +255,20 @@ export default function SubscriptionManagement() {
               const active = (s.status ?? 1) === 1 && !s.isDeleted;
               return (
                 <tr key={s.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
+                  <td className="py-4 px-6 text-center space-x-2 whitespace-nowrap">
+                    <button
+                      onClick={() => openEdit(s)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-brand-50 text-brand-600 hover:bg-brand-500 hover:text-white rounded-lg text-xs font-semibold transition-colors border border-brand-200"
+                    >
+                      <Pencil size={13} /> Edit
+                    </button>
+                    <button
+                      onClick={() => onDelete(s)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-lg text-xs font-semibold transition-colors border border-rose-200"
+                    >
+                      <Trash2 size={13} /> Batalkan
+                    </button>
+                  </td>
                   <td className="py-4 px-6">
                     <div className="font-semibold text-slate-800">{u?.name || 'Pelanggan'}</div>
                     <div className="text-xs text-slate-500">{u?.email || '-'}</div>
@@ -279,20 +293,6 @@ export default function SubscriptionManagement() {
                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${active ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
                       {active ? 'Aktif' : 'Nonaktif'}
                     </span>
-                  </td>
-                  <td className="py-4 px-6 text-center space-x-2 whitespace-nowrap">
-                    <button
-                      onClick={() => openEdit(s)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-brand-50 text-brand-600 hover:bg-brand-500 hover:text-white rounded-lg text-xs font-semibold transition-colors border border-brand-200"
-                    >
-                      <Pencil size={13} /> Edit
-                    </button>
-                    <button
-                      onClick={() => onDelete(s)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-lg text-xs font-semibold transition-colors border border-rose-200"
-                    >
-                      <Trash2 size={13} /> Batalkan
-                    </button>
                   </td>
                 </tr>
               );

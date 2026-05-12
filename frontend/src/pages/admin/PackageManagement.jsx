@@ -145,16 +145,30 @@ const PackageManagement = () => {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
+              <th className="py-4 px-6 font-semibold text-slate-600 text-sm text-center">Aksi</th>
               <th className="py-4 px-6 font-semibold text-slate-600 text-sm">Nama Paket</th>
               <th className="py-4 px-6 font-semibold text-slate-600 text-sm">Kecepatan</th>
               <th className="py-4 px-6 font-semibold text-slate-600 text-sm">Harga / Bulan</th>
               <th className="py-4 px-6 font-semibold text-slate-600 text-sm">Status</th>
-              <th className="py-4 px-6 font-semibold text-slate-600 text-sm text-center">Aksi</th>
             </tr>
           </thead>
           <tbody>
             {displayPackages.map((pkg) => (
               <tr key={pkg.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
+                <td className="py-4 px-6 text-center space-x-2 whitespace-nowrap">
+                  <button 
+                    onClick={() => openEditModal(pkg)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-brand-50 text-brand-600 hover:bg-brand-500 hover:text-white rounded-lg text-xs font-semibold transition-colors border border-brand-200"
+                  >
+                    <Pencil size={13}/> Edit
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(pkg.id)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-lg text-xs font-semibold transition-colors border border-rose-200"
+                  >
+                    <Trash2 size={13}/> Hapus
+                  </button>
+                </td>
                 <td className="py-4 px-6">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center">
@@ -169,20 +183,6 @@ const PackageManagement = () => {
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${pkg.status === 1 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
                     {pkg.status === 1 ? 'Aktif' : 'Nonaktif'}
                   </span>
-                </td>
-                <td className="py-4 px-6 text-center space-x-2 whitespace-nowrap">
-                  <button 
-                    onClick={() => openEditModal(pkg)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-brand-50 text-brand-600 hover:bg-brand-500 hover:text-white rounded-lg text-xs font-semibold transition-colors border border-brand-200"
-                  >
-                    <Pencil size={13}/> Edit
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(pkg.id)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-lg text-xs font-semibold transition-colors border border-rose-200"
-                  >
-                    <Trash2 size={13}/> Hapus
-                  </button>
                 </td>
               </tr>
             ))}

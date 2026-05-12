@@ -187,16 +187,23 @@ export default function UserManagement() {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
+              <th className="py-3 px-6 font-semibold text-slate-700 text-sm text-center">Aksi</th>
               <th className="py-3 px-6 font-semibold text-slate-700 text-sm">Nama</th>
               <th className="py-3 px-6 font-semibold text-slate-700 text-sm">Email</th>
               <th className="py-3 px-6 font-semibold text-slate-700 text-sm">Paket Saat Ini</th>
               <th className="py-3 px-6 font-semibold text-slate-700 text-sm">Status / Role</th>
-              <th className="py-3 px-6 font-semibold text-slate-700 text-sm text-center">Aksi</th>
             </tr>
           </thead>
           <tbody>
             {users.map((u) => (
               <tr key={u.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
+                <td className="py-3 px-6 text-center space-x-2 whitespace-nowrap">
+                  <button onClick={() => openEditModal(u)} className="px-3 py-1.5 bg-brand-50 text-brand-600 hover:bg-brand-500 hover:text-white rounded text-xs font-semibold transition-colors border border-brand-200">Edit</button>
+                  {u.plan && (
+                      <button onClick={() => handleHapusPaket(u)} className="px-3 py-1.5 bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white rounded text-xs font-semibold transition-colors border border-orange-200">Batalkan Paket</button>
+                  )}
+                  <button onClick={() => handleDelete(u.id)} className="px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded text-xs font-semibold transition-colors border border-rose-200">Hapus Akun</button>
+                </td>
                 <td className="py-3 px-6 font-medium text-slate-800">{u.name}</td>
                 <td className="py-3 px-6 text-slate-600 text-sm">{u.email}</td>
                 <td className="py-3 px-6 text-brand-600 font-semibold text-sm">{u.plan || '-'}</td>
@@ -204,13 +211,6 @@ export default function UserManagement() {
                   <span className={`px-2 py-1 rounded text-[11px] font-bold uppercase tracking-wider ${u.role === 'admin' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
                     {u.role === 'admin' ? 'Admin' : 'Aktif'}
                   </span>
-                </td>
-                <td className="py-3 px-6 text-center space-x-2 whitespace-nowrap">
-                  <button onClick={() => openEditModal(u)} className="px-3 py-1.5 bg-brand-50 text-brand-600 hover:bg-brand-500 hover:text-white rounded text-xs font-semibold transition-colors border border-brand-200">Edit</button>
-                  {u.plan && (
-                      <button onClick={() => handleHapusPaket(u)} className="px-3 py-1.5 bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white rounded text-xs font-semibold transition-colors border border-orange-200">Batalkan Paket</button>
-                  )}
-                  <button onClick={() => handleDelete(u.id)} className="px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded text-xs font-semibold transition-colors border border-rose-200">Hapus Akun</button>
                 </td>
               </tr>
             ))}

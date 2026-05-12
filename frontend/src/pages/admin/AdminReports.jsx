@@ -358,6 +358,7 @@ export default function AdminReports() {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-100">
+                <th className="py-3.5 px-5 text-xs font-semibold text-slate-500 uppercase tracking-wider text-left">Aksi</th>
                 {[
                   { label: 'ID Tagihan', field: 'id' },
                   { label: 'Pelanggan', field: 'name' },
@@ -376,7 +377,6 @@ export default function AdminReports() {
                     </span>
                   </th>
                 ))}
-                <th className="py-3.5 px-5 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -402,6 +402,22 @@ export default function AdminReports() {
                 return (
                   <tr key={inv.id} className="hover:bg-slate-50/60 transition-colors group">
                     <td className="py-4 px-5">
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => openEdit(inv)}
+                          className="flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg transition-colors"
+                        >
+                          <Pencil size={13} /> Edit
+                        </button>
+                        <button
+                          onClick={() => setDeleteModal(inv)}
+                          className="flex items-center gap-1.5 text-xs font-semibold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg transition-colors"
+                        >
+                          <Trash2 size={13} /> Hapus
+                        </button>
+                      </div>
+                    </td>
+                    <td className="py-4 px-5">
                       <span className="font-mono text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-lg">
                         {inv.id.substring(0, 10).toUpperCase()}
                       </span>
@@ -422,22 +438,6 @@ export default function AdminReports() {
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${statusInfo.cls}`}>
                         {statusInfo.label}
                       </span>
-                    </td>
-                    <td className="py-4 px-5">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => openEdit(inv)}
-                          className="flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg transition-colors"
-                        >
-                          <Pencil size={13} /> Edit
-                        </button>
-                        <button
-                          onClick={() => setDeleteModal(inv)}
-                          className="flex items-center gap-1.5 text-xs font-semibold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg transition-colors"
-                        >
-                          <Trash2 size={13} /> Hapus
-                        </button>
-                      </div>
                     </td>
                   </tr>
                 );
