@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Loader, X, Save, Pencil, Trash2, Package } from 'lucide-react';
 import toast from 'react-hot-toast';
+import ConfirmModal from '../../components/ConfirmModal';
 
 const PackageManagement = () => {
   const [packages, setPackages] = useState([]);
@@ -17,6 +18,9 @@ const PackageManagement = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  const [deleteModalPkg, setDeleteModalPkg] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchPackages();
@@ -75,19 +79,22 @@ const PackageManagement = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Yakin ingin menghapus paket ini?')) {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/packages/${id}`, { 
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!res.ok) throw new Error('Gagal menghapus paket');
-        fetchPackages();
-      } catch (err) {
-        toast.error(err.message);
-      }
+  const executeDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/packages/${deleteModalPkg.id}`, { 
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Gagal menghapus paket');
+      toast.success('Paket berhasil dihapus');
+      fetchPackages();
+      setDeleteModalPkg(null);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -164,7 +171,7 @@ const PackageManagement = () => {
                     <Pencil size={13}/> Edit
                   </button>
                   <button 
-                    onClick={() => handleDelete(pkg.id)}
+                    onClick={() => setDeleteModalPkg(pkg)}
                     className="inline-flex items-center gap-1 px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-lg text-xs font-semibold transition-colors border border-rose-200"
                   >
                     <Trash2 size={13}/> Hapus
@@ -266,6 +273,17 @@ const PackageManagement = () => {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!deleteModalPkg}
+        onClose={() => setDeleteModalPkg(null)}
+        onConfirm={executeDelete}
+        title="Hapus Paket?"
+        message="Anda yakin ingin menghapus paket ini? Pelanggan aktif mungkin akan terpengaruh."
+        itemDetails={deleteModalPkg ? deleteModalPkg.packageName : ''}
+        confirmText="Ya, Hapus Paket"
+        isLoading={isDeleting}
+      />
     </div>
   );
 };

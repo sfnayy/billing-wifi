@@ -5,6 +5,7 @@ import { Wifi, Check, Activity, CreditCard, Download, FileText, AlertCircle, Clo
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import toast from 'react-hot-toast';
+import ConfirmModal from '../../components/ConfirmModal';
 
 export default function UserDashboard() {
   const [packages, setPackages] = useState([]);
@@ -14,6 +15,8 @@ export default function UserDashboard() {
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user') || '{}'));
   const navigate = useNavigate();
+
+  const [orderModalPlan, setOrderModalPlan] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -85,9 +88,9 @@ export default function UserDashboard() {
     return () => clearInterval(timer);
   }, [activeSubscription]);
 
-  const handlePilihPaket = async (plan) => {
-    if(!window.confirm(`Pesan paket ${plan.packageName}? Tagihan akan otomatis dibuat.`)) return;
+  const executeOrder = async () => {
     setLoading(true);
+    const plan = orderModalPlan;
     try {
       const token = localStorage.getItem('token');
       // Request subscription ke backend (Otomatis membuat subscription & invoice baru)
@@ -108,8 +111,10 @@ export default function UserDashboard() {
       localStorage.setItem('user', JSON.stringify(user));
 
       toast.success("Berhasil! Silakan selesaikan pembayaran untuk mengaktifkan paket.");
+      setOrderModalPlan(null);
       // Kirim amount dan invoiceId agar UserPayment tahu invoice mana yang harus dilunasi
       navigate('/user/payment', { state: { amount: amount || plan.price, invoiceIds: invoiceId ? [invoiceId] : [] } }); 
+
     } catch (error) {
       console.error('Error pilih paket:', error.response?.data || error.message);
       const errMsg = error.response?.data?.message || 'Coba lagi nanti.';
@@ -319,7 +324,7 @@ export default function UserDashboard() {
               </ul>
               <button 
                 disabled={loading || isPlanActive || isPlanPending}
-                onClick={() => handlePilihPaket(plan)}
+                onClick={() => setOrderModalPlan(plan)}
                 className={`w-full py-3 rounded-xl font-bold transition-all shadow-md active:scale-95 disabled:opacity-50 ${isPlanActive ? 'bg-emerald-500 text-white' : isPlanPending ? 'bg-amber-500 hover:bg-amber-600 text-white cursor-not-allowed' : 'bg-slate-800 hover:bg-slate-900 text-white'}`}>
                 {isPlanActive ? 'Paket Aktif Saat Ini' : isPlanPending ? 'Menunggu Pembayaran' : 'Pilih Paket Ini'}
               </button>
@@ -329,6 +334,17 @@ export default function UserDashboard() {
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={!!orderModalPlan}
+        onClose={() => setOrderModalPlan(null)}
+        onConfirm={executeOrder}
+        title="Konfirmasi Pesanan Paket"
+        message="Anda yakin ingin memesan paket ini? Sistem akan otomatis membuat tagihan."
+        itemDetails={orderModalPlan ? orderModalPlan.packageName : ''}
+        confirmText="Ya, Pesan"
+        isLoading={loading}
+      />
     </div>
   );
 }

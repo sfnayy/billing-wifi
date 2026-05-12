@@ -4,6 +4,7 @@ import { Trash2, Edit, Loader, X, Save, FileDown } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import toast from 'react-hot-toast';
+import ConfirmModal from '../../components/ConfirmModal';
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -17,6 +18,12 @@ export default function UserManagement() {
   
   // State Packages
   const [availablePackages, setAvailablePackages] = useState([]);
+
+  // Confirm Modal states
+  const [deleteModalUser, setDeleteModalUser] = useState(null);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
+  const [cancelModalUser, setCancelModalUser] = useState(null);
+  const [isCancelingPkg, setIsCancelingPkg] = useState(false);
 
   const fetchUsers = async () => {
     try {
@@ -47,31 +54,34 @@ export default function UserManagement() {
     fetchPackages();
   }, []);
 
-  const handleDelete = async (id) => {
-    if(window.confirm('Yakin ingin menghapus pelanggan ini beserta seluruh datanya?')) {
-      try {
-        const token = localStorage.getItem('token');
-        await axios.delete(`${import.meta.env.VITE_API_URL}/users/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        fetchUsers();
-      } catch (error) {
-        toast.error("Gagal menghapus");
-      }
+  const executeDeleteUser = async () => {
+    setIsDeletingUser(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${import.meta.env.VITE_API_URL}/users/${deleteModalUser.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success("Akun berhasil dihapus.");
+      fetchUsers();
+      setDeleteModalUser(null);
+    } catch (error) {
+      toast.error("Gagal menghapus");
+    } finally {
+      setIsDeletingUser(false);
     }
   };
 
-  const handleHapusPaket = async (userToReset) => {
-    if(!window.confirm(`Yakin ingin menonaktifkan dan menghapus paket "${userToReset.plan}" dari pengguna ${userToReset.name}?`)) return;
+  const executeCancelPkg = async () => {
+    setIsCancelingPkg(true);
     try {
       const token = localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
       
       // 1. Hapus nama paket dari user
-      await axios.put(`${import.meta.env.VITE_API_URL}/users/${userToReset.id}`, { plan: "" }, config);
+      await axios.put(`${import.meta.env.VITE_API_URL}/users/${cancelModalUser.id}`, { plan: "" }, config);
       
       // 2. Ambil langganan aktif lalu matikan statusnya (soft delete)
-      const subRes = await axios.get(`${import.meta.env.VITE_API_URL}/subscriptions/customer/${userToReset.id}`, config);
+      const subRes = await axios.get(`${import.meta.env.VITE_API_URL}/subscriptions/customer/${cancelModalUser.id}`, config);
       const activeSubs = subRes.data.filter(s => s.status === 1);
       
       for (const sub of activeSubs) {
@@ -80,9 +90,12 @@ export default function UserManagement() {
       
       toast.success("Paket berhasil dihapus dari pelanggan!");
       fetchUsers();
+      setCancelModalUser(null);
     } catch(err) {
       console.error(err);
       toast.error("Terjadi kesalahan saat menghapus paket pengguna.");
+    } finally {
+      setIsCancelingPkg(false);
     }
   };
 
@@ -209,9 +222,9 @@ export default function UserManagement() {
                 <td className="py-3 px-6 text-center space-x-2 whitespace-nowrap">
                   <button onClick={() => openEditModal(u)} className="px-3 py-1.5 bg-brand-50 text-brand-600 hover:bg-brand-500 hover:text-white rounded text-xs font-semibold transition-colors border border-brand-200">Edit</button>
                   {u.plan && (
-                      <button onClick={() => handleHapusPaket(u)} className="px-3 py-1.5 bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white rounded text-xs font-semibold transition-colors border border-orange-200">Batalkan Paket</button>
+                      <button onClick={() => setCancelModalUser(u)} className="px-3 py-1.5 bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white rounded text-xs font-semibold transition-colors border border-orange-200">Batalkan Paket</button>
                   )}
-                  <button onClick={() => handleDelete(u.id)} className="px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded text-xs font-semibold transition-colors border border-rose-200">Hapus Akun</button>
+                  <button onClick={() => setDeleteModalUser(u)} className="px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded text-xs font-semibold transition-colors border border-rose-200">Hapus Akun</button>
                 </td>
                 <td className="py-3 px-6 font-medium text-slate-800">{u.name}</td>
                 <td className="py-3 px-6 text-slate-600 text-sm">{u.email}</td>
@@ -366,6 +379,28 @@ export default function UserManagement() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!deleteModalUser}
+        onClose={() => setDeleteModalUser(null)}
+        onConfirm={executeDeleteUser}
+        title="Hapus Akun Pelanggan?"
+        message="Yakin ingin menghapus pelanggan ini beserta seluruh datanya? Data tidak dapat dikembalikan."
+        itemDetails={deleteModalUser?.name}
+        confirmText="Ya, Hapus"
+        isLoading={isDeletingUser}
+      />
+      
+      <ConfirmModal
+        isOpen={!!cancelModalUser}
+        onClose={() => setCancelModalUser(null)}
+        onConfirm={executeCancelPkg}
+        title="Batalkan Paket Pelanggan?"
+        message="Yakin ingin menonaktifkan dan menghapus paket pelanggan ini?"
+        itemDetails={`${cancelModalUser?.name} - ${cancelModalUser?.plan}`}
+        confirmText="Ya, Batalkan"
+        isLoading={isCancelingPkg}
+      />
     </div>
   );
 }

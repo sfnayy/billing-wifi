@@ -11,6 +11,8 @@ function fmtDate(iso) {
   }
 }
 
+import ConfirmModal from '../../components/ConfirmModal';
+
 function fmtMoney(n) {
   const v = Number(n);
   if (Number.isNaN(v)) return '-';
@@ -31,6 +33,9 @@ export default function SubscriptionManagement() {
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
+
+  const [deleteModalSub, setDeleteModalSub] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [form, setForm] = useState({
     customerId: '',
@@ -162,19 +167,23 @@ export default function SubscriptionManagement() {
     }
   };
 
-  const onDelete = async (sub) => {
-    if (!window.confirm('Yakin ingin membatalkan langganan ini?')) return;
+  const executeDelete = async () => {
+    setIsDeleting(true);
     try {
       const token = localStorage.getItem('token');
       const headers = { 'Authorization': `Bearer ${token}` };
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/subscriptions/${sub.id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/subscriptions/${deleteModalSub.id}`, {
         method: 'DELETE',
         headers,
       });
       if (!res.ok) throw new Error('Gagal membatalkan langganan.');
+      toast.success('Langganan berhasil dibatalkan.');
       await fetchAll();
+      setDeleteModalSub(null);
     } catch (e) {
       toast.error(e?.message || "Gagal membatalkan.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -264,7 +273,7 @@ export default function SubscriptionManagement() {
                       <Pencil size={13} /> Edit
                     </button>
                     <button
-                      onClick={() => onDelete(s)}
+                      onClick={() => setDeleteModalSub(s)}
                       className="inline-flex items-center gap-1 px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-lg text-xs font-semibold transition-colors border border-rose-200"
                     >
                       <Trash2 size={13} /> Batalkan
@@ -433,6 +442,17 @@ export default function SubscriptionManagement() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!deleteModalSub}
+        onClose={() => setDeleteModalSub(null)}
+        onConfirm={executeDelete}
+        title="Batalkan Langganan?"
+        message="Anda yakin ingin membatalkan langganan pelanggan ini? Aksi ini akan merubah status langganan menjadi nonaktif."
+        itemDetails={deleteModalSub ? `${userMap[deleteModalSub.customerId]?.name || 'Pelanggan'} - ${pkgMap[deleteModalSub.packageId]?.packageName || 'Paket'}` : ''}
+        confirmText="Ya, Batalkan"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }
