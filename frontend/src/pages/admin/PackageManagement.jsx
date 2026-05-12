@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Loader, X, Save, Pencil, Trash2, Package } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const PackageManagement = () => {
   const [packages, setPackages] = useState([]);
@@ -68,7 +69,7 @@ const PackageManagement = () => {
       fetchPackages();
       resetForm();
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     } finally {
       setIsSaving(false);
     }
@@ -85,7 +86,7 @@ const PackageManagement = () => {
         if (!res.ok) throw new Error('Gagal menghapus paket');
         fetchPackages();
       } catch (err) {
-        alert(err.message);
+        toast.error(err.message);
       }
     }
   };

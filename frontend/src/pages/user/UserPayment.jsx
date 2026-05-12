@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
 import { CreditCard, Loader } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function UserPayment() {
   const [loading, setLoading] = useState(false);
@@ -52,7 +53,7 @@ export default function UserPayment() {
   const handlePayment = async (e) => {
     e.preventDefault();
     if (invoiceAmount <= 0) {
-        alert("Anda belum memilih paket atau tidak ada tagihan aktif.");
+        toast.error("Anda belum memilih paket atau tidak ada tagihan aktif.");
         return;
     }
 
@@ -74,13 +75,13 @@ export default function UserPayment() {
         } catch (e) {}
       }
       if (!window.snap) {
-         alert("Midtrans Snap belum dimuat! Pastikan Client Key benar di index.html");
+         toast.error("Midtrans Snap belum dimuat! Pastikan Client Key benar di index.html");
          return;
       }
 
       window.snap.pay(token, {
         onSuccess: async function(result){ 
-            alert("Pembayaran Berhasil! Terima kasih."); 
+            toast.success("Pembayaran Berhasil! Terima kasih."); 
             // Opsional: Lakukan aksi force refresh manual jika webhook tidak ada ngrok lokalnya
             try {
                 const token = localStorage.getItem('token');
@@ -92,17 +93,17 @@ export default function UserPayment() {
             } catch(e){}
             window.location.replace('/user'); // Kembali ke dashboard user
         },
-        onPending: function(result){ alert("Menunggu pembayaran..."); },
+        onPending: function(result){ toast('Menunggu pembayaran...', { icon: '⏳' }); },
         onError: function(result){ 
-            alert("Pembayaran Gagal!"); 
+            toast.error("Pembayaran Gagal!"); 
         },
         onClose: function(){ 
-            alert("Anda membatalkan popup pembayaran Midtrans. Tagihan belum dibayar."); 
+            toast.error("Anda membatalkan popup pembayaran Midtrans. Tagihan belum dibayar."); 
         }
       });
     } catch (error) {
       console.error(error);
-      alert("Terjadi kesalahan sistem saat mengambil transaksi. Pastikan backend aktif.");
+      toast.error("Terjadi kesalahan sistem saat mengambil transaksi. Pastikan backend aktif.");
     } finally {
       setLoading(false);
     }

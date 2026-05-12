@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { Wifi, Loader, Eye, EyeOff } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function Register() {
   const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'user' });
@@ -23,7 +24,7 @@ export default function Register() {
     setLoading(true);
     try {
       await axios.post(import.meta.env.VITE_API_URL + '/auth/register', formData);
-      alert('Registrasi Berhasil! Silakan Login.');
+      toast.success("Registrasi Berhasil! Silakan Login.");
       navigate('/login');
     } catch (error) {
       setError(error.response?.data?.message || 'Registrasi Gagal!');

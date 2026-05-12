@@ -36,7 +36,7 @@ export default function Reports() {
           
           return {
             id: trxCode,
-            date: new Date(inv.invoiceDate).toLocaleDateString('id-ID'),
+            date: new Date(inv.invoiceDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
             name: userMap[inv.customerId] || "Pelanggan",
             amount: inv.totalAmount || 0,
             status: statusText
@@ -64,7 +64,7 @@ export default function Reports() {
     
     doc.setFontSize(11);
     doc.setTextColor(100);
-    doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 14, 30);
+    doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, 14, 30);
 
     // Table
     const tableColumn = ["ID Transaksi", "Tanggal", "Pelanggan", "Jumlah", "Status"];

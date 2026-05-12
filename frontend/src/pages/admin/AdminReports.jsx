@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import {
+import toast from 'react-hot-toast';
   Download, FileText, Pencil, Trash2, X, Loader,
   CheckCircle, Search, Filter, AlertTriangle, Save,
   ChevronUp, ChevronDown
@@ -182,7 +183,7 @@ export default function AdminReports() {
       setCreateModal(false);
       await fetchData();
     } catch (err) {
-      alert(err?.message || 'Gagal membuat tagihan.');
+      toast.error(err?.message || "Gagal membuat tagihan.");
     } finally {
       setCreateLoading(false);
     }
@@ -225,7 +226,7 @@ export default function AdminReports() {
       ));
       setTimeout(() => { setEditModal(null); setEditSuccess(''); }, 1200);
     } catch {
-      alert('Gagal memperbarui tagihan. Coba lagi.');
+      toast.error("Gagal memperbarui tagihan. Coba lagi.");
     } finally {
       setEditLoading(false);
     }
@@ -244,7 +245,7 @@ export default function AdminReports() {
       setInvoices(prev => prev.filter(inv => inv.id !== deleteModal.id));
       setDeleteModal(null);
     } catch {
-      alert('Gagal menghapus tagihan.');
+      toast.error("Gagal menghapus tagihan.");
     } finally {
       setDeleteLoading(false);
     }
@@ -262,8 +263,8 @@ export default function AdminReports() {
 
     const tableRows = filtered.map(inv => [
       inv.id.substring(0, 10).toUpperCase(),
-      new Date(inv.invoiceDate).toLocaleDateString('id-ID'),
-      new Date(inv.dueDate).toLocaleDateString('id-ID'),
+      new Date(inv.invoiceDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+      new Date(inv.dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
       userMap[inv.customerId] || 'Pelanggan',
       `Rp ${Number(inv.totalAmount).toLocaleString('id-ID')}`,
       getStatusInfo(inv.status).label,
@@ -402,7 +403,7 @@ export default function AdminReports() {
                 return (
                   <tr key={inv.id} className="hover:bg-slate-50/60 transition-colors group">
                     <td className="py-4 px-5">
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-2">
                         <button
                           onClick={() => openEdit(inv)}
                           className="flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg transition-colors"
@@ -426,10 +427,10 @@ export default function AdminReports() {
                       {userMap[inv.customerId] || 'Pelanggan'}
                     </td>
                     <td className="py-4 px-5 text-sm text-slate-500">
-                      {new Date(inv.invoiceDate).toLocaleDateString('id-ID')}
+                      {new Date(inv.invoiceDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </td>
                     <td className="py-4 px-5 text-sm text-slate-500">
-                      {new Date(inv.dueDate).toLocaleDateString('id-ID')}
+                      {new Date(inv.dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </td>
                     <td className="py-4 px-5 font-bold text-slate-800 text-sm">
                       Rp {Number(inv.totalAmount).toLocaleString('id-ID')}

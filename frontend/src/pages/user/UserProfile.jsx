@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { User, Mail, Phone, MapPin, Loader, CheckCircle, X } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function UserProfile({ onClose, asPage = false }) {
   const [loading, setLoading] = useState(false);
@@ -72,7 +73,7 @@ export default function UserProfile({ onClose, asPage = false }) {
       }, 1500);
     } catch (error) {
       console.error(error);
-      alert("Gagal memperbarui profil.");
+      toast.error("Gagal memperbarui profil.");
     } finally {
       setLoading(false);
     }

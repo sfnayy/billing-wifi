@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Trash2, Edit, Loader, X, Save, FileDown } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import toast from 'react-hot-toast';
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -26,7 +27,7 @@ export default function UserManagement() {
       setUsers(res.data);
     } catch (error) {
       console.error(error);
-      alert('Gagal mengambil data user');
+      toast.error("Gagal mengambil data user");
     } finally {
       setLoading(false);
     }
@@ -55,7 +56,7 @@ export default function UserManagement() {
         });
         fetchUsers();
       } catch (error) {
-        alert('Gagal menghapus');
+        toast.error("Gagal menghapus");
       }
     }
   };
@@ -77,11 +78,11 @@ export default function UserManagement() {
           await axios.put(`${import.meta.env.VITE_API_URL}/subscriptions/${sub.id}`, { status: -1, isDeleted: 1 }, config);
       }
       
-      alert('Paket berhasil dihapus dari pelanggan!');
+      toast.success("Paket berhasil dihapus dari pelanggan!");
       fetchUsers();
     } catch(err) {
       console.error(err);
-      alert('Terjadi kesalahan saat menghapus paket pengguna.');
+      toast.error("Terjadi kesalahan saat menghapus paket pengguna.");
     }
   };
 
@@ -89,6 +90,10 @@ export default function UserManagement() {
     setEditingUser(user);
     setEditForm({
       name: user.name || '',
+      email: user.email || '',
+      gender: user.gender || '',
+      phone: user.phone || '',
+      address: user.address || '',
       plan: user.plan || '',
       role: user.role || 'user',
       packageId: '',
@@ -112,6 +117,10 @@ export default function UserManagement() {
       // Update data user basic
       await axios.put(`${import.meta.env.VITE_API_URL}/users/${editingUser.id}`, {
         name: editForm.name,
+        email: editForm.email,
+        gender: editForm.gender,
+        phone: editForm.phone,
+        address: editForm.address,
         role: editForm.role,
         plan: editForm.plan
       }, config);
@@ -125,12 +134,12 @@ export default function UserManagement() {
           }, config);
       }
 
-      alert('Data pengguna berhasil diperbarui!');
+      toast.success("Data pengguna berhasil diperbarui!");
       closeEditModal();
       fetchUsers();
     } catch (error) {
       console.error(error);
-      alert('Gagal memperbarui data');
+      toast.error("Gagal memperbarui data");
     } finally {
       setIsSaving(false);
     }
@@ -140,7 +149,7 @@ export default function UserManagement() {
     const doc = new jsPDF();
     doc.text("Laporan Data Pelanggan WiFi", 14, 15);
     doc.setFontSize(10);
-    doc.text(`Dicetak pada: ${new Date().toLocaleDateString('id-ID')}`, 14, 22);
+    doc.text(`Dicetak pada: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, 14, 22);
 
     const tableColumn = ["No", "Nama", "Email", "Paket Layanan", "Role"];
     const tableRows = [];
@@ -241,6 +250,51 @@ export default function UserManagement() {
                   onChange={(e) => setEditForm({...editForm, name: e.target.value})}
                   className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none transition-all"
                   required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                <input 
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                  className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none transition-all"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Jenis Kelamin</label>
+                  <select
+                    value={editForm.gender}
+                    onChange={(e) => setEditForm({...editForm, gender: e.target.value})}
+                    className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none transition-all"
+                  >
+                    <option value="">Pilih...</option>
+                    <option value="Laki-laki">Laki-laki</option>
+                    <option value="Perempuan">Perempuan</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Nomor Telepon</label>
+                  <input 
+                    type="text"
+                    value={editForm.phone}
+                    onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
+                    className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Alamat</label>
+                <textarea 
+                  value={editForm.address}
+                  onChange={(e) => setEditForm({...editForm, address: e.target.value})}
+                  className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none transition-all resize-none"
+                  rows="2"
                 />
               </div>
 

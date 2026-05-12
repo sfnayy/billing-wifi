@@ -288,7 +288,7 @@ export default function AdminDashboard() {
                   <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="py-4 px-6 text-sm font-mono text-slate-500">{inv.id?.slice(0, 10)}...</td>
                     <td className="py-4 px-6 text-sm text-slate-700">
-                      {new Date(inv.invoiceDate || inv.createdDate).toLocaleDateString('id-ID')}
+                      {new Date(inv.invoiceDate || inv.createdDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </td>
                     <td className="py-4 px-6 text-sm font-bold text-slate-800">
                       Rp {Number(inv.totalAmount).toLocaleString('id-ID')}

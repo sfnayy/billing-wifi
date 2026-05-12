@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Plus, Loader, X, Save, Pencil, Trash2, CreditCard, Search } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 function fmtDate(iso) {
   if (!iso) return '-';
   try {
-    return new Date(iso).toLocaleDateString('id-ID');
+    return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
   } catch {
     return '-';
   }
@@ -123,7 +124,7 @@ export default function SubscriptionManagement() {
       };
 
       if (!form.customerId || !form.packageId) {
-        alert('Pelanggan dan paket wajib diisi.');
+        toast.error("Pelanggan dan paket wajib diisi.");
         return;
       }
 
@@ -155,7 +156,7 @@ export default function SubscriptionManagement() {
       resetForm();
       await fetchAll();
     } catch (err) {
-      alert(err?.message || 'Terjadi kesalahan.');
+      toast.error(err?.message || "Terjadi kesalahan.");
     } finally {
       setSaving(false);
     }
@@ -173,7 +174,7 @@ export default function SubscriptionManagement() {
       if (!res.ok) throw new Error('Gagal membatalkan langganan.');
       await fetchAll();
     } catch (e) {
-      alert(e?.message || 'Gagal membatalkan.');
+      toast.error(e?.message || "Gagal membatalkan.");
     }
   };
 

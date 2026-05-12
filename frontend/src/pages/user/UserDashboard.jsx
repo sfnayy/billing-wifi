@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Wifi, Check, Activity, CreditCard, Download, FileText, AlertCircle, Clock } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import toast from 'react-hot-toast';
 
 export default function UserDashboard() {
   const [packages, setPackages] = useState([]);
@@ -106,13 +107,13 @@ export default function UserDashboard() {
       user.plan = plan.packageName;
       localStorage.setItem('user', JSON.stringify(user));
 
-      alert('Berhasil! Silakan selesaikan pembayaran untuk mengaktifkan paket.');
+      toast.success("Berhasil! Silakan selesaikan pembayaran untuk mengaktifkan paket.");
       // Kirim amount dan invoiceId agar UserPayment tahu invoice mana yang harus dilunasi
       navigate('/user/payment', { state: { amount: amount || plan.price, invoiceIds: invoiceId ? [invoiceId] : [] } }); 
     } catch (error) {
       console.error('Error pilih paket:', error.response?.data || error.message);
       const errMsg = error.response?.data?.message || 'Coba lagi nanti.';
-      alert(`Gagal memilih paket: ${errMsg}`);
+      toast.error(`Gagal memilih paket: ${errMsg}`);
     } finally {
       setLoading(false);
     }
@@ -134,7 +135,7 @@ export default function UserDashboard() {
     
     doc.setFontSize(11);
     doc.setTextColor(100);
-    doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 14, 30);
+    doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, 14, 30);
     doc.text(`Nama Pelanggan: ${user.name}`, 14, 36);
     doc.text(`ID Tagihan: ${invoice.id}`, 14, 42);
 
@@ -145,8 +146,8 @@ export default function UserDashboard() {
     const tableColumn = ["Deskripsi", "Tanggal", "Batas Waktu", "Status", "Total"];
     const tableRows = [[
         "Tagihan Paket Internet", 
-        new Date(invoice.invoiceDate).toLocaleDateString('id-ID'),
-        new Date(invoice.dueDate).toLocaleDateString('id-ID'),
+        new Date(invoice.invoiceDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+        new Date(invoice.dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
         statusText,
         `Rp ${Number(invoice.totalAmount).toLocaleString('id-ID')}`
     ]];
@@ -224,7 +225,7 @@ export default function UserDashboard() {
                      {activeInvoices.map(inv => (
                          <div key={inv.id} className="bg-white p-4 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
                              <div>
-                                 <p className="text-sm text-slate-500 font-medium">Batas Pembayaran: {new Date(inv.dueDate).toLocaleDateString('id-ID')}</p>
+                                 <p className="text-sm text-slate-500 font-medium">Batas Pembayaran: {new Date(inv.dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                                  <p className="text-xl font-bold text-slate-800">Rp {Number(inv.totalAmount).toLocaleString('id-ID')}</p>
                              </div>
                              <button
@@ -266,7 +267,7 @@ export default function UserDashboard() {
 
                      return (
                      <tr key={inv.id} className="border-b border-slate-100 hover:bg-slate-50/50">
-                       <td className="py-4 px-6 text-slate-600 font-medium">{new Date(inv.invoiceDate).toLocaleDateString('id-ID')}</td>
+                       <td className="py-4 px-6 text-slate-600 font-medium">{new Date(inv.invoiceDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</td>
                        <td className="py-4 px-6 font-bold text-slate-800">Rp {Number(inv.totalAmount).toLocaleString('id-ID')}</td>
                        <td className="py-4 px-6">
                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusClass}`}>{statusText}</span>
